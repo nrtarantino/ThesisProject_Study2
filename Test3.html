@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categorization Task</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .canvas-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        canvas {
+            background: #1a1a1a;
+        }
+
+        .instruction-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1a1a1a;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 40px;
+        }
+
+        .block-info {
+            display: none; /* Hidden - removed per user request */
+        }
+
+        .instruction-text {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 40px;
+            max-width: 800px;
+            line-height: 1.6;
+        }
+
+        .start-button {
+            padding: 15px 40px;
+            font-size: 18px;
+            background-color: #4a9eff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .start-button:hover {
+            background-color: #3a8eef;
+        }
+
+        .feedback-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 999;
+        }
+
+        .feedback-screen.correct {
+            background-color: #00ff00;
+        }
+
+        .feedback-screen.incorrect {
+            background-color: #ff0000;
+        }
+
+        .white-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            z-index: 998;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="instruction-screen" id="instructionScreen">
+        <div class="block-info" id="blockInfo"></div>
+        <div class="instruction-text" id="instructionText">
+            Instructions will appear here
+        </div>
+        <button class="start-button" id="startButton">Start</button>
+    </div>
+    
+    <div class="white-screen hidden" id="whiteScreen"></div>
+    <div class="feedback-screen hidden" id="feedbackScreen"></div>
+    
+    <div class="canvas-container">
+        <div class="canvas-wrapper">
+            <canvas id="scatterplotCanvas" width="900" height="900"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('scatterplotCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Constants
+        const CANVAS_SIZE = 900;
+        const MARGIN = 90;
+        const PLOT_SIZE = CANVAS_SIZE - 2 * MARGIN;
+        const DOT_RADIUS = 5; // pixels (approximately 2mm)
+        
+        // Noise parameter (will be set per big block)
+        let SIGMA = 0.1;
+        
+        // Axes visibility toggle - set to true to show axes, false to hide them
+        const SHOW_AXES = false;
+        
+        // Probe trials toggle - set to true to include probe trials, false to omit them
+        const INCLUDE_PROBE_TRIALS = true;
+        
+        // Key mapping - swap these values to change the mapping
+        const STIMULUS_A_KEY = 'L';  // Key to press for Stimulus A
+        const STIMULUS_B_KEY = 'A';  // Key to press for Stimulus B
+        
+        // Big block structure
+        let currentBigBlockIndex = 0;
+        
+        // Define big blocks with their noise parameters
+        const BIG_BLOCKS_ORIGINAL = [
+            { sigma: 0.15},
+            { sigma: 0.3},
+            { sigma: 0.45},
+            
+            // Add more big blocks as needed
+        ];
+        
+        // Randomize the order of big blocks
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+        
+        const BIG_BLOCKS = shuffleArray(BIG_BLOCKS_ORIGINAL);
+        
+        // Stimulus definitions
+        const STIMULUS_A = {
+            name: 'A',
+            pairs: [
+                { slope: 0.7, n: 8 },
+                { slope: 0.8, n: 9 },
+                { slope: 0.9, n: 10 },
+                { slope: 1, n: 11 }
+            ]
+        }; 
+        
+        const STIMULUS_B = {
+            name: 'B',
+            pairs: [
+                { slope: -1, n: 25 },
+                { slope: -0.9, n: 24 },
+                { slope: -0.8, n: 23 },
+                { slope: -0.7, n: 22 }
+            ]
+        };
+        
+        // Function to get stimulus parameters
+        function getStimulusParams(stimulusType) {
+            return stimulusType === 'A' ? STIMULUS_A : STIMULUS_B;
+        }
+        
+        // Axis range: extend 0.25 on each side
+        const X_MIN = -0.3;
+        const X_MAX = 1.3;
+        const Y_MIN = -0.3;
+        const Y_MAX = 1.3;
+        
+        // Generate random number from normal distribution (Box-Muller transform)
+        function randomNormal(mean = 0, stdDev = 1) {
+            if (stdDev === 0) return mean;
+            const u1 = Math.random();
+            const u2 = Math.random();
+            const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+            return z0 * stdDev + mean;
+        }
+        
+        // Generate scatterplot data according to the algorithm
+        function generateData(n, alpha, sigma) {
+            let valid = false;
+            let x, y;
+            
+            while (!valid) {
+                // Generate equally spaced x values from 0 to 1
+                x = [];
+                for (let i = 0; i < n; i++) {
+                    x.push(i / (n - 1));
+                }
+                
+                // Generate y values: yi = α * xi + εi
+                y = [];
+                for (let i = 0; i < n; i++) {
+                    const epsilon = sigma > 0 ? randomNormal(0, sigma) : 0;
+                    y.push(alpha * x[i] + epsilon);
+                }
+                
+                // Adjust vertically so center of mass (mean) of y-values is at 0.5
+                const meanY = y.reduce((sum, val) => sum + val, 0) / n;
+                const adjustment = 0.5 - meanY;
+                y = y.map(yi => yi + adjustment);
+                
+                // Check if all points are within bounds AFTER adjustment
+                valid = true;
+                for (let i = 0; i < n; i++) {
+                    if (y[i] < -0.27 || y[i] > 1.27) {
+                        valid = false;
+                        break;
+                    }
+                }
+            }
+            
+            return { x, y };
+        }
+        
+        // Convert normalized coordinates to canvas coordinates
+        function toCanvasX(normalizedX) {
+            const normalized = (normalizedX - X_MIN) / (X_MAX - X_MIN);
+            return MARGIN + normalized * PLOT_SIZE;
+        }
+        
+        function toCanvasY(normalizedY) {
+            const normalized = (normalizedY - Y_MIN) / (Y_MAX - Y_MIN);
+            return MARGIN + (1 - normalized) * PLOT_SIZE;
+        }
+        
+        // Draw axes with ticks
+        function drawAxes(ctx) {
+            if (!SHOW_AXES) {
+                return;
+            }
+            
+            ctx.strokeStyle = '#888';
+            ctx.lineWidth = 1;
+            
+            // Draw x-axis
+            const xAxisY = toCanvasY(Y_MIN);
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(X_MIN), xAxisY);
+            ctx.lineTo(toCanvasX(X_MAX), xAxisY);
+            ctx.stroke();
+            
+            // Draw y-axis
+            const yAxisX = toCanvasX(X_MIN);
+            ctx.beginPath();
+            ctx.moveTo(yAxisX, toCanvasY(Y_MIN));
+            ctx.lineTo(yAxisX, toCanvasY(Y_MAX));
+            ctx.stroke();
+            
+            // Draw ticks
+            const tickPositions = [0, 0.5, 1];
+            const tickLength = 5;
+            
+            tickPositions.forEach(pos => {
+                // X-axis ticks
+                const x = toCanvasX(pos);
+                ctx.beginPath();
+                ctx.moveTo(x, xAxisY);
+                ctx.lineTo(x, xAxisY + tickLength);
+                ctx.stroke();
+                
+                // Y-axis ticks
+                const y = toCanvasY(pos);
+                ctx.beginPath();
+                ctx.moveTo(yAxisX, y);
+                ctx.lineTo(yAxisX - tickLength, y);
+                ctx.stroke();
+            });
+        }
+        
+        // Calculate slope using linear regression
+        function calculateSlope(data) {
+            const n = data.x.length;
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+            
+            for (let i = 0; i < n; i++) {
+                sumX += data.x[i];
+                sumY += data.y[i];
+                sumXY += data.x[i] * data.y[i];
+                sumX2 += data.x[i] * data.x[i];
+            }
+            
+            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            return slope;
+        }
+        
+        // Calculate R-squared
+        function calculateRSquared(data) {
+            const n = data.x.length;
+            if (n < 2) return 0;
+            
+            const meanY = data.y.reduce((sum, val) => sum + val, 0) / n;
+            
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+            for (let i = 0; i < n; i++) {
+                sumX += data.x[i];
+                sumY += data.y[i];
+                sumXY += data.x[i] * data.y[i];
+                sumX2 += data.x[i] * data.x[i];
+            }
+            
+            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+            
+            let ssRes = 0;
+            let ssTot = 0;
+            
+            for (let i = 0; i < n; i++) {
+                const yPredicted = slope * data.x[i] + intercept;
+                const residual = data.y[i] - yPredicted;
+                ssRes += residual * residual;
+                
+                const deviation = data.y[i] - meanY;
+                ssTot += deviation * deviation;
+            }
+            
+            if (ssTot === 0) return 1;
+            const rSquared = 1 - (ssRes / ssTot);
+            return rSquared;
+        }
+        
+        // Draw scatterplot
+        function drawScatterplot(ctx, data) {
+            ctx.fillStyle = '#fff';
+            
+            data.x.forEach((xi, i) => {
+                const canvasX = toCanvasX(xi);
+                const canvasY = toCanvasY(data.y[i]);
+                
+                ctx.beginPath();
+                ctx.arc(canvasX, canvasY, DOT_RADIUS, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+        }
+        
+        // Generate a stimulus
+        function generateStimulus(stimulusType, specificSlope = null, specificN = null) {
+            let n, slopeParam;
+            
+            if (specificSlope !== null && specificN !== null) {
+                n = specificN;
+                slopeParam = specificSlope;
+            } else {
+                const params = getStimulusParams(stimulusType);
+                const pair = params.pairs[Math.floor(Math.random() * params.pairs.length)];
+                n = pair.n;
+                slopeParam = pair.slope;
+            }
+            
+            const data = generateData(n, slopeParam, SIGMA);
+            const calculatedSlope = calculateSlope(data);
+            const rSquared = calculateRSquared(data);
+            const actualN = data.x.length;
+            
+            return {
+                data: data,
+                n: actualN,
+                slope: calculatedSlope,
+                rSquared: rSquared,
+                slopeParam: slopeParam
+            };
+        }
+        
+        // Trial management
+        let currentTrialIndex = 0;
+        let trials = [];
+        let trainingTrials = [];
+        let explanationTrials = [];
+        let isInTrainingPhase = false;
+        let isInExplanationPhase = false;
+        let trainingTrialResults = [];
+        let trialStartTime = 0;
+        let responseReceived = false;
+        let trialTimeout = null;
+        let isWaitingForResponse = false;
+        
+        // Data recording
+        let globalTrialNumber = 0;
+        let trialData = [];
+        let currentTrialStimulusData = null;
+        
+        // Generate explanation trials (one A, one B, randomized)
+        function generateExplanationTrials() {
+            const explanationTrials = [
+                {
+                    stimulusType: 'A',
+                    correctResponse: STIMULUS_A_KEY,
+                    isProbe: false,
+                    trialType: 'explanation',
+                    explanationText: `This array goes into category 1. Press the ${STIMULUS_A_KEY} key.`
+                },
+                {
+                    stimulusType: 'B',
+                    correctResponse: STIMULUS_B_KEY,
+                    isProbe: false,
+                    trialType: 'explanation',
+                    explanationText: `This array goes into category 2. Press the ${STIMULUS_B_KEY} key.`
+                }
+            ];
+            
+            // Randomize order
+            for (let i = explanationTrials.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [explanationTrials[i], explanationTrials[j]] = [explanationTrials[j], explanationTrials[i]];
+            }
+            
+            return explanationTrials;
+        }
+        
+        // Generate training trials
+        function generateTrainingTrials(count = 20) {
+            const newTrainingTrials = [];
+            
+            // Half A, half B
+            const halfCount = Math.floor(count / 2);
+            const remainder = count % 2;
+            
+            for (let i = 0; i < halfCount + remainder; i++) {
+                newTrainingTrials.push({
+                    stimulusType: 'A',
+                    correctResponse: STIMULUS_A_KEY,
+                    isProbe: false,
+                    trialType: 'training'
+                });
+            }
+            
+            for (let i = 0; i < halfCount; i++) {
+                newTrainingTrials.push({
+                    stimulusType: 'B',
+                    correctResponse: STIMULUS_B_KEY,
+                    isProbe: false,
+                    trialType: 'training'
+                });
+            }
+            
+            // Randomize
+            for (let i = newTrainingTrials.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newTrainingTrials[i], newTrainingTrials[j]] = [newTrainingTrials[j], newTrainingTrials[i]];
+            }
+            
+            return newTrainingTrials;
+        }
+        
+        // Generate 94 regular trials + 58 probe trials
+        function generateTrials() {
+            const aParams = getStimulusParams('A');
+            const bParams = getStimulusParams('B');
+            
+            trials = [];
+            
+            // 47 regular trials with Stimulus A
+            for (let i = 0; i < 47; i++) {
+                trials.push({
+                    stimulusType: 'A',
+                    correctResponse: STIMULUS_A_KEY,
+                    isProbe: false,
+                    trialType: 'regular'
+                });
+            }
+            
+            // 47 regular trials with Stimulus B
+            for (let i = 0; i < 47; i++) {
+                trials.push({
+                    stimulusType: 'B',
+                    correctResponse: STIMULUS_B_KEY,
+                    isProbe: false,
+                    trialType: 'regular'
+                });
+            }
+            
+            // Probe trials (only if INCLUDE_PROBE_TRIALS is true)
+            if (INCLUDE_PROBE_TRIALS) {
+                // 29 probe trials: switch N values
+                for (let i = 0; i < 29; i++) {
+                    const aPair = aParams.pairs[Math.floor(Math.random() * aParams.pairs.length)];
+                    const bPair = bParams.pairs[Math.floor(Math.random() * bParams.pairs.length)];
+                    
+                    // Randomly assign which stimulus type to show
+                    const showA = Math.random() < 0.5;
+                    
+                    trials.push({
+                        stimulusType: showA ? 'A' : 'B',
+                        correctResponse: showA ? STIMULUS_A_KEY : STIMULUS_B_KEY,
+                        isProbe: true,
+                        probeType: 'switchN',
+                        trialType: 'probe',
+                        probeParams: {
+                            // Swapped N: use A's slope with B's N, or B's slope with A's N
+                            slope: showA ? aPair.slope : bPair.slope,
+                            n: showA ? bPair.n : aPair.n
+                        }
+                    });
+                }
+                
+                // 29 probe trials: switch slope values
+                for (let i = 0; i < 29; i++) {
+                    const aPair = aParams.pairs[Math.floor(Math.random() * aParams.pairs.length)];
+                    const bPair = bParams.pairs[Math.floor(Math.random() * bParams.pairs.length)];
+                    
+                    const showA = Math.random() < 0.5;
+                    
+                    trials.push({
+                        stimulusType: showA ? 'A' : 'B',
+                        correctResponse: showA ? STIMULUS_A_KEY : STIMULUS_B_KEY,
+                        isProbe: true,
+                        probeType: 'switchSlope',
+                        trialType: 'probe',
+                        probeParams: {
+                            // Swapped slope: use A's N with B's slope, or B's N with A's slope
+                            slope: showA ? bPair.slope : aPair.slope,
+                            n: showA ? aPair.n : bPair.n
+                        }
+                    });
+                }
+            }
+            
+            // Randomize all trials
+            for (let i = trials.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [trials[i], trials[j]] = [trials[j], trials[i]];
+            }
+        }
+        
+        // Display a trial
+        function presentTrial(trial) {
+            // Clear canvas
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+            
+            // Draw axes
+            drawAxes(ctx);
+            
+            // Generate stimulus
+            let stimulus;
+            if (trial.isProbe && trial.probeParams) {
+                // Probe trial: use swapped parameters
+                stimulus = generateStimulus(trial.stimulusType, trial.probeParams.slope, trial.probeParams.n);
+            } else {
+                // Regular trial: use normal generation
+                stimulus = generateStimulus(trial.stimulusType);
+            }
+            
+            drawScatterplot(ctx, stimulus.data);
+            
+            // Draw explanation text if this is an explanation trial
+            if (trial.trialType === 'explanation' && trial.explanationText) {
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                
+                // Draw text near the top of the canvas (not the very top, but up there)
+                const textX = CANVAS_SIZE / 2;
+                const textY = 80; // Position near the top
+                
+                // Draw text with outline for better visibility
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 4;
+                ctx.strokeText(trial.explanationText, textX, textY);
+                ctx.fillText(trial.explanationText, textX, textY);
+            }
+            
+            // Store stimulus data for recording
+            currentTrialStimulusData = {
+                stimulusType: trial.stimulusType,
+                isProbe: trial.isProbe || false,
+                probeType: trial.probeType || null,
+                stim: {
+                    slope: stimulus.slope,
+                    n: stimulus.n,
+                    rSquared: stimulus.rSquared
+                }
+            };
+            
+            // Reset response tracking
+            responseReceived = false;
+            isWaitingForResponse = true;
+            trialStartTime = Date.now();
+            
+            // Set timeout for 3000ms (or longer for explanation trials)
+            const timeoutDuration = trial.trialType === 'explanation' ? 10000 : 3000;
+            trialTimeout = setTimeout(() => {
+                if (!responseReceived) {
+                    handleTrialResponse(null);
+                }
+            }, timeoutDuration);
+        }
+        
+        // Handle response to a trial
+        function handleTrialResponse(responseKey) {
+            if (!isWaitingForResponse) return;
+            
+            responseReceived = true;
+            isWaitingForResponse = false;
+            
+            if (trialTimeout) {
+                clearTimeout(trialTimeout);
+                trialTimeout = null;
+            }
+            
+            const trial = isInExplanationPhase ? explanationTrials[currentTrialIndex] : 
+                          (isInTrainingPhase ? trainingTrials[currentTrialIndex] : trials[currentTrialIndex]);
+            const reactionTime = Date.now() - trialStartTime;
+            
+            // Determine correctness: L = Stimulus A, A = Stimulus B
+            let correct = false;
+            if (trial.isProbe) {
+                // Probe trials always marked as correct
+                correct = true;
+            } else {
+                // Check if response matches correct response
+                if (responseKey === trial.correctResponse) {
+                    correct = true;
+                } else if (responseKey === null) {
+                    correct = false;
+                }
+            }
+            
+            // Track training trial results (but not explanation trials)
+            if (isInTrainingPhase && !isInExplanationPhase) {
+                trainingTrialResults.push(correct);
+            }
+            
+            globalTrialNumber++;
+            
+            const trialType = isInExplanationPhase ? 'explanation' : 
+                             (isInTrainingPhase ? 'training' : (trial.trialType || 'regular'));
+            
+            // Record trial data
+            const recordedTrialData = {
+                trialNumber: globalTrialNumber,
+                accuracy: correct,
+                reactionTime: reactionTime,
+                responseKey: responseKey, // STIMULUS_A_KEY (Stim A), STIMULUS_B_KEY (Stim B), or null
+                stimulusType: trial.stimulusType,
+                noise: SIGMA,
+                bigBlock: currentBigBlockIndex + 1,
+                trialType: trialType,
+                isProbe: trial.isProbe || false,
+                probeType: trial.probeType || null,
+                showAxes: SHOW_AXES,
+                stimSlope: currentTrialStimulusData ? currentTrialStimulusData.stim.slope : null,
+                stimN: currentTrialStimulusData ? currentTrialStimulusData.stim.n : null,
+                stimRSquared: currentTrialStimulusData ? currentTrialStimulusData.stim.rSquared : null
+            };
+            
+            trialData.push(recordedTrialData);
+            console.log('Trial data:', recordedTrialData);
+            
+            // Show feedback (or white screen for probe trials)
+            if (trial.isProbe) {
+                showWhiteScreen();
+            } else {
+                showFeedback(correct);
+            }
+        }
+        
+        // Show feedback as a small square on a blank intertrial screen
+        function showFeedback(correct) {
+            // Clear canvas to blank background (intertrial interval)
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+            
+            // Draw a small square in the center of the canvas
+            const squareSize = 60;
+            const centerX = CANVAS_SIZE / 2;
+            const centerY = CANVAS_SIZE / 2;
+            const squareX = centerX - squareSize / 2;
+            const squareY = centerY - squareSize / 2;
+            
+            // Set color based on correctness
+            ctx.fillStyle = correct ? '#00ff00' : '#ff0000';
+            ctx.fillRect(squareX, squareY, squareSize, squareSize);
+            
+            // Draw border for visibility
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(squareX, squareY, squareSize, squareSize);
+            
+            setTimeout(() => {
+                nextTrial();
+            }, 500);
+        }
+        
+        // Show blank intertrial screen (for probe trials - no feedback square)
+        function showWhiteScreen() {
+            // Clear canvas to blank background (intertrial interval)
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+            
+            // No square for probe trials, just blank background
+            
+            setTimeout(() => {
+                nextTrial();
+            }, 500);
+        }
+        
+        // Move to next trial or end block
+        function nextTrial() {
+            if (isInExplanationPhase) {
+                currentTrialIndex++;
+                
+                if (currentTrialIndex < explanationTrials.length) {
+                    presentTrial(explanationTrials[currentTrialIndex]);
+                } else {
+                    // Explanation trials complete, move to training
+                    console.log('Explanation trials complete. Moving to training trials.');
+                    isInExplanationPhase = false;
+                    isInTrainingPhase = true;
+                    currentTrialIndex = 0;
+                    trainingTrialResults = []; // Reset training results
+                    
+                    if (trainingTrials.length > 0) {
+                        presentTrial(trainingTrials[0]);
+                    } else {
+                        alert('Error: No training trials generated');
+                        showInstructionScreen('Error: No training trials generated. Please refresh.');
+                    }
+                }
+            } else if (isInTrainingPhase) {
+                currentTrialIndex++;
+                
+                if (currentTrialIndex < trainingTrials.length) {
+                    presentTrial(trainingTrials[currentTrialIndex]);
+                } else {
+                    // Check training criterion: at least 60% accuracy on last 15 trials
+                    const last15Trials = trainingTrialResults.slice(-15); // Get last 15 trials
+                    const totalTrainingTrials = last15Trials.length;
+                    const correctTrainingTrials = last15Trials.filter(r => r === true).length;
+                    const accuracy = totalTrainingTrials > 0 ? correctTrainingTrials / totalTrainingTrials : 0;
+                    
+                    console.log(`Training accuracy (last 15 trials): ${(accuracy * 100).toFixed(1)}% (${correctTrainingTrials}/${totalTrainingTrials})`);
+                    
+                    if (accuracy >= 0.6) {
+                        console.log('Training criterion met! Moving to regular trials.');
+                        isInTrainingPhase = false;
+                        currentTrialIndex = 0;
+                        
+                        if (trials.length > 0) {
+                            presentTrial(trials[0]);
+                        } else {
+                            alert('Error: No regular trials generated');
+                            showInstructionScreen('Error: No regular trials generated. Please refresh.');
+                        }
+                    } else {
+                        console.log('Training criterion not met. Adding more training trials.');
+                        const additionalTrials = generateTrainingTrials(20);
+                        trainingTrials = trainingTrials.concat(additionalTrials);
+                        presentTrial(trainingTrials[currentTrialIndex]);
+                    }
+                }
+            } else {
+                currentTrialIndex++;
+                
+                if (currentTrialIndex < trials.length) {
+                    presentTrial(trials[currentTrialIndex]);
+                } else {
+                    // Block complete
+                    console.log('Block complete!');
+                    currentBigBlockIndex++;
+                    
+                    if (currentBigBlockIndex >= BIG_BLOCKS.length) {
+                        // All big blocks complete
+                        exportTrialData();
+                        showInstructionScreen('All blocks complete! Thank you for participating.\n\nData has been logged to console and downloaded as CSV.');
+                    } else {
+                        // Start next big block
+                        startNextBigBlock();
+                    }
+                }
+            }
+        }
+        
+        // Export trial data to CSV
+        function exportTrialData() {
+            console.log('All trial data:', trialData);
+            
+            if (trialData.length === 0) {
+                console.log('No trial data to export');
+                return;
+            }
+            
+            const headers = ['trialNumber', 'accuracy', 'reactionTime', 'responseKey', 'stimulusType', 'noise', 'bigBlock', 'trialType', 'isProbe', 'probeType', 'showAxes', 'stimSlope', 'stimN', 'stimRSquared'];
+            let csv = headers.join(',') + '\n';
+            
+            trialData.forEach(trial => {
+                const row = [
+                    trial.trialNumber,
+                    trial.accuracy,
+                    trial.reactionTime,
+                    trial.responseKey !== null ? trial.responseKey : '',
+                    trial.stimulusType,
+                    trial.noise,
+                    trial.bigBlock,
+                    trial.trialType || 'regular',
+                    trial.isProbe ? 'true' : 'false',
+                    trial.probeType !== null ? trial.probeType : '',
+                    trial.showAxes ? 'true' : 'false',
+                    trial.stimSlope !== null ? trial.stimSlope.toFixed(6) : '',
+                    trial.stimN !== null ? trial.stimN : '',
+                    trial.stimRSquared !== null ? trial.stimRSquared.toFixed(6) : ''
+                ];
+                csv += row.join(',') + '\n';
+            });
+            
+            // Download CSV file
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `categorization_data_${Date.now()}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+        
+        // Start next big block
+        function startNextBigBlock() {
+            SIGMA = BIG_BLOCKS[currentBigBlockIndex].sigma;
+            
+            const blockInfo = `Big Block ${currentBigBlockIndex + 1} of ${BIG_BLOCKS.length}\nNoise: ${SIGMA.toFixed(3)}`;
+            const instructionText = 'Use the directions and feedback to respond with the A and L keys. A Green square indicates you selected correctly; a red square indicates you selected incorrectly.';
+            showInstructionScreen(instructionText, blockInfo);
+        }
+        
+        // Show instruction screen
+        function showInstructionScreen(instructionText = 'Instructions will appear here', blockInfo = '') {
+            const instructionScreen = document.getElementById('instructionScreen');
+            const instructionTextEl = document.getElementById('instructionText');
+            const blockInfoEl = document.getElementById('blockInfo');
+            instructionTextEl.textContent = instructionText;
+            blockInfoEl.textContent = blockInfo;
+            instructionScreen.classList.remove('hidden');
+            
+            currentTrialIndex = 0;
+        }
+        
+        // Start block (called from start button)
+        function startBlock() {
+            const instructionScreen = document.getElementById('instructionScreen');
+            instructionScreen.classList.add('hidden');
+            
+            // Initialize explanation phase first
+            isInExplanationPhase = true;
+            isInTrainingPhase = false;
+            explanationTrials = [];
+            trainingTrials = [];
+            trainingTrialResults = [];
+            currentTrialIndex = 0;
+            
+            // Generate regular trials
+            if (trials.length === 0) {
+                generateTrials();
+            }
+            
+            // Generate explanation trials (2 trials: one A, one B)
+            explanationTrials = generateExplanationTrials();
+            
+            // Generate initial 20 training trials
+            trainingTrials = generateTrainingTrials(20);
+            
+            // Show intertrial interval (blank dark screen) before first trial
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+            
+            setTimeout(() => {
+                if (explanationTrials.length > 0) {
+                    presentTrial(explanationTrials[0]);
+                } else {
+                    alert('Error: No explanation trials generated');
+                    showInstructionScreen('Error: No explanation trials generated. Please refresh.');
+                }
+            }, 500);
+        }
+        
+        // Keyboard event handler - uses STIMULUS_A_KEY and STIMULUS_B_KEY constants
+        document.addEventListener('keydown', function(event) {
+            if (isWaitingForResponse) {
+                const keyCodeA = 'Key' + STIMULUS_A_KEY;
+                const keyCodeB = 'Key' + STIMULUS_B_KEY;
+                
+                if (event.code === keyCodeA) {
+                    event.preventDefault();
+                    handleTrialResponse(STIMULUS_A_KEY);
+                } else if (event.code === keyCodeB) {
+                    event.preventDefault();
+                    handleTrialResponse(STIMULUS_B_KEY);
+                }
+            }
+        });
+        
+        // Start button handler
+        document.getElementById('startButton').addEventListener('click', startBlock);
+        
+        // Initialize - start first big block
+        currentBigBlockIndex = 0;
+        startNextBigBlock();
+    </script>
+</body>
+</html>
+
