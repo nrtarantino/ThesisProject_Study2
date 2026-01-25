@@ -82,22 +82,6 @@
             background-color: #3a8eef;
         }
 
-        .test-button {
-            padding: 15px 40px;
-            font-size: 18px;
-            background-color: #ff6b4a;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-top: 20px;
-        }
-
-        .test-button:hover {
-            background-color: #ef5b3a;
-        }
-
         .feedback-screen {
             position: fixed;
             top: 0;
@@ -137,7 +121,6 @@
             Instructions will appear here
         </div>
         <button class="start-button" id="startButton">Start</button>
-        <button class="test-button" id="testOSFButton">Test OSF Upload</button>
     </div>
     
     <div class="white-screen hidden" id="whiteScreen"></div>
@@ -823,7 +806,7 @@
                     if (currentBigBlockIndex >= BIG_BLOCKS.length) {
                         // All big blocks complete
                         exportTrialData();
-                        showInstructionScreen('All blocks complete! Thank you for participating.\n\nData has been logged to console and downloaded as CSV.');
+                        showInstructionScreen('Thank you');
                     } else {
                         // Start next big block
                         startNextBigBlock();
@@ -866,17 +849,6 @@
             
             // Generate unique filename
             const filename = `categorization_data_${Date.now()}.csv`;
-            
-            // Download CSV file locally
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
             
             // Send data to OSF
             fetch("https://pipe.jspsych.org/api/data/", {
@@ -977,68 +949,6 @@
                 }
             }
         });
-        
-        // Test OSF upload function
-        function testOSFUpload() {
-            // Generate random test CSV data
-            const testHeaders = ['trialNumber', 'accuracy', 'reactionTime', 'responseKey', 'stimulusType', 'noise', 'bigBlock', 'trialType', 'isProbe', 'probeType', 'showAxes', 'stimSlope', 'stimN', 'stimRSquared'];
-            let testCsv = testHeaders.join(',') + '\n';
-            
-            // Generate 5 random test rows
-            for (let i = 1; i <= 5; i++) {
-                const row = [
-                    i,
-                    Math.random() > 0.5 ? 'true' : 'false',
-                    Math.floor(Math.random() * 2000) + 500,
-                    Math.random() > 0.5 ? 'L' : 'A',
-                    Math.random() > 0.5 ? 'A' : 'B',
-                    (Math.random() * 0.5).toFixed(3),
-                    1,
-                    'test',
-                    'false',
-                    '',
-                    'false',
-                    (Math.random() * 2 - 1).toFixed(6),
-                    Math.floor(Math.random() * 20) + 8,
-                    Math.random().toFixed(6)
-                ];
-                testCsv += row.join(',') + '\n';
-            }
-            
-            const testFilename = `test_data_${Date.now()}.csv`;
-            
-            console.log('Sending test data to OSF...');
-            console.log('Test CSV:', testCsv);
-            
-            // Send test data to OSF
-            fetch("https://pipe.jspsych.org/api/data/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "*/*",
-                },
-                body: JSON.stringify({
-                    experimentID: "1IQX1jXTAEW6",
-                    filename: testFilename,
-                    data: testCsv,
-                }),
-            })
-            .then(response => {
-                console.log('Response status:', response.status);
-                return response.text();
-            })
-            .then(data => {
-                console.log('Response data:', data);
-                alert('Test data sent! Check console for details.');
-            })
-            .catch(error => {
-                console.error('Error sending test data to OSF:', error);
-                alert('Error: ' + error.message + '\nCheck console for details.');
-            });
-        }
-        
-        // Test OSF button handler
-        document.getElementById('testOSFButton').addEventListener('click', testOSFUpload);
         
         // Start button handler
         document.getElementById('startButton').addEventListener('click', startBlock);
