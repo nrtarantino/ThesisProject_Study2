@@ -848,16 +848,43 @@
                 csv += row.join(',') + '\n';
             });
             
-            // Download CSV file
+            // Generate unique filename
+            const filename = `categorization_data_${Date.now()}.csv`;
+            
+            // Download CSV file locally
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `categorization_data_${Date.now()}.csv`;
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
+            
+            // Send data to OSF
+            fetch("https://pipe.jspsych.org/api/data/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "*/*",
+                },
+                body: JSON.stringify({
+                    experimentID: "1IQX1jXTAEW6",
+                    filename: filename,
+                    data: csv,
+                }),
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log('Data successfully sent to OSF');
+                } else {
+                    console.error('Failed to send data to OSF:', response.status, response.statusText);
+                }
+            })
+            .catch(error => {
+                console.error('Error sending data to OSF:', error);
+            });
         }
         
         // Start next big block
