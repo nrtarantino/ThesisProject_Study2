@@ -960,7 +960,7 @@
             SIGMA = BIG_BLOCKS[currentBigBlockIndex].sigma;
             
             const blockInfo = `Big Block ${currentBigBlockIndex + 1} of ${BIG_BLOCKS.length}\nNoise: ${SIGMA.toFixed(3)}`;
-            const instructionText = 'Use the directions and feedback to respond with the A and L keys. A Green square indicates you selected correctly; a red square indicates you selected incorrectly.';
+            const instructionText = 'Use the directions and feedback to respond with the A and L keys. A Green square indicates you selected correctly; a red square indicates you selected incorrectly. On some trials, you will not receive feedback. This is normal. Please keep responding based on what rule you remember.';
             showInstructionScreen(instructionText, blockInfo);
         }
         
