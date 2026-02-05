@@ -1,0 +1,28 @@
+{
+    "id": "A67D51C8",
+    "path": null,
+    "project_path": null,
+    "type": "object_explorer",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1769374875330.0,
+    "source_on_save": false,
+    "relative_order": 3,
+    "properties": {
+        "id": "0a6562437a254a7abfdc628fa4690e58",
+        "name": "models_targetN",
+        "title": "models_targetN",
+        "language": "R",
+        "source_window_id": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 0,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1769374875330,
+    "read_only": false,
+    "read_only_alternatives": []
+}
