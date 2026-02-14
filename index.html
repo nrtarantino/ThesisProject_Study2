@@ -408,6 +408,30 @@
             };
         }
         
+        // Qualtrics data collection
+        let participantIdFromUrl = null;
+        let sonaId = null;
+        let qualtricsResponseId = null;
+        
+        // Extract Qualtrics data from URL parameters on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            const params = new URLSearchParams(window.location.search);
+            
+            // Capture both IDs separately
+            sonaId = params.get('id');
+            qualtricsResponseId = params.get('ResponseID');
+            
+            // Primary ID for main use (priority: id > ResponseID > PID > pid)
+            participantIdFromUrl = sonaId || qualtricsResponseId || params.get('PID') || params.get('pid');
+            
+            if (participantIdFromUrl) {
+                if (sonaId) console.log('SONA ID:', sonaId);
+                if (qualtricsResponseId) console.log('Qualtrics ResponseID:', qualtricsResponseId);
+            } else {
+                console.warn('No participant ID found in URL parameters. Expected id, ResponseID, PID, or pid.');
+            }
+        });
+        
         // Trial management
         let currentTrialIndex = 0;
         let trials = [];
@@ -908,11 +932,14 @@
                 return;
             }
             
-            const headers = ['trialNumber', 'accuracy', 'reactionTime', 'responseKey', 'stimulusType', 'noise', 'bigBlock', 'trialType', 'isProbe', 'probeType', 'showAxes', 'stimSlope', 'stimN', 'stimRSquared'];
+            const headers = ['participantId', 'sonaId', 'qualtricsResponseId', 'trialNumber', 'accuracy', 'reactionTime', 'responseKey', 'stimulusType', 'noise', 'bigBlock', 'trialType', 'isProbe', 'probeType', 'showAxes', 'stimSlope', 'stimN', 'stimRSquared'];
             let csv = headers.join(',') + '\n';
             
             trialData.forEach(trial => {
                 const row = [
+                    participantIdFromUrl || '',
+                    sonaId || '',
+                    qualtricsResponseId || '',
                     trial.trialNumber,
                     trial.accuracy,
                     trial.reactionTime,
