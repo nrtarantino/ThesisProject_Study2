@@ -82,25 +82,6 @@
             background-color: #3a8eef;
         }
 
-        .test-button {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            font-size: 14px;
-            background-color: #ff6b4a;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.2s;
-            z-index: 2000;
-        }
-
-        .test-button:hover {
-            background-color: #ef5b3a;
-        }
-
         .feedback-screen {
             position: fixed;
             top: 0;
@@ -150,8 +131,6 @@
             <canvas id="scatterplotCanvas" width="900" height="900"></canvas>
         </div>
     </div>
-
-    <button class="test-button" id="testQualtricsButton">Test Qualtrics Message</button>
 
     <script>
         const canvas = document.getElementById('scatterplotCanvas');
@@ -1103,12 +1082,6 @@
         
         // Start button handler
         document.getElementById('startButton').addEventListener('click', startBlock);
-        
-        // Test Qualtrics message button handler
-        document.getElementById('testQualtricsButton').addEventListener('click', function() {
-            console.log('Test button clicked - sending Qualtrics message');
-            finishAndReturn();
-        });
         
         // Initialize - start first big block
         currentBigBlockIndex = 0;
