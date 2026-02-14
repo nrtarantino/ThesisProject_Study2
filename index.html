@@ -82,25 +82,6 @@
             background-color: #3a8eef;
         }
 
-        .test-message-button {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            font-size: 14px;
-            background-color: #ff6b4a;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.2s;
-            z-index: 2000;
-        }
-
-        .test-message-button:hover {
-            background-color: #ef5b3a;
-        }
-
         .feedback-screen {
             position: fixed;
             top: 0;
@@ -151,8 +132,6 @@
         </div>
     </div>
 
-    <button class="test-message-button" id="testMessageButton">Test Qualtrics Message</button>
-
     <script>
         const canvas = document.getElementById('scatterplotCanvas');
         const ctx = canvas.getContext('2d');
@@ -162,6 +141,9 @@
         const MARGIN = 90;
         const PLOT_SIZE = CANVAS_SIZE - 2 * MARGIN;
         const DOT_RADIUS = 5; // pixels (approximately 2mm)
+        
+        // Qualtrics integration
+        const QUALTRICS_ORIGIN = 'https://uwmadison.co1.qualtrics.com';
         
         // Noise parameter (will be set per big block)
         let SIGMA = 0.1;
@@ -972,60 +954,50 @@
                     console.error('Failed to send data to OSF:', response.status, response.statusText);
                 }
                 // Send message to Qualtrics that task is complete
-                sendTaskCompleteMessage();
+                finishAndReturn();
             })
             .catch(error => {
                 console.error('Error sending data to OSF:', error);
                 // Still send message even if OSF upload fails
-                sendTaskCompleteMessage();
+                finishAndReturn();
             });
         }
         
-        // Send message to Qualtrics (either parent iframe or opener window)
-        function sendTaskCompleteMessage() {
-            try {
-                const message = { type: 'TASK_DONE' };
-                const targetOrigins = ['*', window.location.origin, 'https://nrtarantino.github.io'];
-                
-                // Determine target window: opener (if opened in new window) or parent (if embedded)
-                let targetWindow = null;
-                let windowType = '';
-                
-                if (window.opener && window.opener !== window) {
-                    // Task opened in new window - use opener
-                    targetWindow = window.opener;
-                    windowType = 'opener';
-                    console.log('Detected: Task opened in new window, using window.opener');
-                } else if (window.parent && window.parent !== window) {
-                    // Task embedded in iframe - use parent
-                    targetWindow = window.parent;
-                    windowType = 'parent';
-                    console.log('Detected: Task embedded in iframe, using window.parent');
-                } else {
-                    console.error('Neither window.opener nor window.parent available');
-                    return;
-                }
-                
-                // Send message with multiple target origins
-                targetOrigins.forEach(origin => {
-                    try {
-                        targetWindow.postMessage(message, origin);
-                        console.log(`Task complete message sent to ${windowType} with origin: ${origin}`);
-                    } catch (e) {
-                        console.log(`Failed to send to ${windowType} with origin ${origin}:`, e);
-                    }
-                });
-                
-                // Also try without origin restriction as fallback
+        // Send message to Qualtrics and close window (matching reference file approach)
+        function finishAndReturn() {
+            // Be defensive: send the message a couple times before closing
+            function sendDone() {
                 try {
-                    targetWindow.postMessage(message);
-                    console.log(`Task complete message sent to ${windowType} (no origin restriction)`);
-                } catch (e) {
-                    console.log(`Failed to send to ${windowType} without origin restriction:`, e);
+                    if (window.opener && !window.opener.closed) {
+                        // Send as JSON string
+                        window.opener.postMessage('{"type":"TASK_DONE"}', QUALTRICS_ORIGIN);
+                        // Also send as object (some setups prefer this)
+                        window.opener.postMessage({ type: 'TASK_DONE' }, QUALTRICS_ORIGIN);
+                        return true;
+                    }
+                } catch (e) { 
+                    console.log('Error sending to opener:', e);
                 }
-            } catch (error) {
-                console.error('Error sending task complete message:', error);
+                return false;
             }
+
+            var sent = sendDone();
+            setTimeout(sendDone, 75);   // small retries help with timing
+            setTimeout(sendDone, 200);
+
+            // Give the message a moment to land, then try to close
+            setTimeout(function () {
+                window.close();
+                // If close is blocked, show fallback instruction
+                setTimeout(function () {
+                    // Update the instruction screen if window doesn't close
+                    const instructionScreen = document.getElementById('instructionScreen');
+                    const instructionText = document.getElementById('instructionText');
+                    if (instructionText) {
+                        instructionText.textContent = 'Task complete ✅\n\nPlease return to your Qualtrics tab to continue.';
+                    }
+                }, 150);
+            }, 150);
         }
         
         // Start next big block
@@ -1110,12 +1082,6 @@
         
         // Start button handler
         document.getElementById('startButton').addEventListener('click', startBlock);
-        
-        // Test message button handler
-        document.getElementById('testMessageButton').addEventListener('click', function() {
-            console.log('Test button clicked - sending task complete message');
-            sendTaskCompleteMessage();
-        });
         
         // Initialize - start first big block
         currentBigBlockIndex = 0;
