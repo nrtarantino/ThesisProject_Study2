@@ -82,6 +82,25 @@
             background-color: #3a8eef;
         }
 
+        .test-message-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            font-size: 14px;
+            background-color: #ff6b4a;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+            z-index: 2000;
+        }
+
+        .test-message-button:hover {
+            background-color: #ef5b3a;
+        }
+
         .feedback-screen {
             position: fixed;
             top: 0;
@@ -131,6 +150,8 @@
             <canvas id="scatterplotCanvas" width="900" height="900"></canvas>
         </div>
     </div>
+
+    <button class="test-message-button" id="testMessageButton">Test Qualtrics Message</button>
 
     <script>
         const canvas = document.getElementById('scatterplotCanvas');
@@ -950,10 +971,32 @@
                 } else {
                     console.error('Failed to send data to OSF:', response.status, response.statusText);
                 }
+                // Send message to Qualtrics that task is complete
+                sendTaskCompleteMessage();
             })
             .catch(error => {
                 console.error('Error sending data to OSF:', error);
+                // Still send message even if OSF upload fails
+                sendTaskCompleteMessage();
             });
+        }
+        
+        // Send message to Qualtrics parent window that task is complete
+        function sendTaskCompleteMessage() {
+            try {
+                const message = { type: 'TASK_DONE' };
+                // Send to parent window (Qualtrics)
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage(message, 'https://nrtarantino.github.io');
+                    console.log('Task complete message sent to Qualtrics');
+                } else {
+                    // If not in an iframe, also try sending to current origin for testing
+                    window.postMessage(message, window.location.origin);
+                    console.log('Task complete message sent (not in iframe, testing mode)');
+                }
+            } catch (error) {
+                console.error('Error sending task complete message:', error);
+            }
         }
         
         // Start next big block
@@ -1038,6 +1081,12 @@
         
         // Start button handler
         document.getElementById('startButton').addEventListener('click', startBlock);
+        
+        // Test message button handler
+        document.getElementById('testMessageButton').addEventListener('click', function() {
+            console.log('Test button clicked - sending task complete message');
+            sendTaskCompleteMessage();
+        });
         
         // Initialize - start first big block
         currentBigBlockIndex = 0;
