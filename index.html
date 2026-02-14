@@ -981,18 +981,47 @@
             });
         }
         
-        // Send message to Qualtrics parent window that task is complete
+        // Send message to Qualtrics (either parent iframe or opener window)
         function sendTaskCompleteMessage() {
             try {
                 const message = { type: 'TASK_DONE' };
-                // Send to parent window (Qualtrics)
-                if (window.parent && window.parent !== window) {
-                    window.parent.postMessage(message, 'https://nrtarantino.github.io');
-                    console.log('Task complete message sent to Qualtrics');
+                const targetOrigins = ['*', window.location.origin, 'https://nrtarantino.github.io'];
+                
+                // Determine target window: opener (if opened in new window) or parent (if embedded)
+                let targetWindow = null;
+                let windowType = '';
+                
+                if (window.opener && window.opener !== window) {
+                    // Task opened in new window - use opener
+                    targetWindow = window.opener;
+                    windowType = 'opener';
+                    console.log('Detected: Task opened in new window, using window.opener');
+                } else if (window.parent && window.parent !== window) {
+                    // Task embedded in iframe - use parent
+                    targetWindow = window.parent;
+                    windowType = 'parent';
+                    console.log('Detected: Task embedded in iframe, using window.parent');
                 } else {
-                    // If not in an iframe, also try sending to current origin for testing
-                    window.postMessage(message, window.location.origin);
-                    console.log('Task complete message sent (not in iframe, testing mode)');
+                    console.error('Neither window.opener nor window.parent available');
+                    return;
+                }
+                
+                // Send message with multiple target origins
+                targetOrigins.forEach(origin => {
+                    try {
+                        targetWindow.postMessage(message, origin);
+                        console.log(`Task complete message sent to ${windowType} with origin: ${origin}`);
+                    } catch (e) {
+                        console.log(`Failed to send to ${windowType} with origin ${origin}:`, e);
+                    }
+                });
+                
+                // Also try without origin restriction as fallback
+                try {
+                    targetWindow.postMessage(message);
+                    console.log(`Task complete message sent to ${windowType} (no origin restriction)`);
+                } catch (e) {
+                    console.log(`Failed to send to ${windowType} without origin restriction:`, e);
                 }
             } catch (error) {
                 console.error('Error sending task complete message:', error);
