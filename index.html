@@ -52,12 +52,6 @@
             line-height: 1.6;
         }
         
-        #breakScreen {
-            display: none;
-            max-width: 600px;
-            padding: 20px;
-            font-size: 20px;
-        }
         
         #feedbackSquare {
             position: fixed;
@@ -107,10 +101,6 @@
         <img id="stimulusImage" alt="Stimulus">
         <div id="textOverlay"></div>
         
-        <div id="breakScreen">
-            <h2>Break</h2>
-            <p>Take a moment to rest. Press any key when you're ready to continue.</p>
-        </div>
         
         <div id="feedbackSquare"></div>
     </div>
@@ -187,6 +177,8 @@
         let trialData = []; // Store all trial data
         let globalTrialNumber = 0; // Global trial counter
         let isIntertrialInterval = false; // Track if we're in intertrial interval
+        let currentPart = 1; // Tracks Part 1-4 across both blocks
+        let resumeAfterBreak = false; // Whether Start button resumes main trials vs starts new block
         
         const BLOCKS_ORIGINAL = [
             {
@@ -280,34 +272,29 @@
             return result;
         }
         
-        function showInitialInstructions() {
+        const DIRECTIONS_TEXT = 'Use the directions and feedback to respond with the A and L keys. A green square indicates you selected correctly; a red square indicates you selected incorrectly. On some trials, you will not receive feedback. This is normal. Please keep responding based on what rule you remember.';
+        
+        function showPartScreen() {
             document.getElementById('instructionText').innerHTML = `
-                <p>Use the directions and feedback to respond with the A and L keys. A Green square indicates you selected correctly; a red square indicates you selected incorrectly. On some trials, you will not receive feedback. This is normal. Please keep responding based on what rule you remember.</p>
+                <h2>Part ${currentPart} of 4</h2>
+                <p>${DIRECTIONS_TEXT}</p>
             `;
+            document.getElementById('instructions').style.display = 'block';
             document.getElementById('startButton').style.display = 'block';
             currentPhase = 'instructions';
         }
         
+        function showInitialInstructions() {
+            currentPart = 1;
+            showPartScreen();
+        }
+        
         function initializeBlock() {
             if (currentBlock >= BLOCKS.length) {
-                document.getElementById('instructionText').textContent = 'Task complete! Thank you.';
+                showCompletion();
                 return;
             }
-            
-            const block = BLOCKS[currentBlock];
-            const key1 = getCorrectKey(block.stimulusTypes[0]);
-            const key2 = getCorrectKey(block.stimulusTypes[1]);
-            
-            document.getElementById('instructionText').innerHTML = `
-                <h2>Block ${currentBlock + 1}: ${block.name}</h2>
-                <p>In this block, you will categorize ${block.stimulusTypes.join(' and ')} stimuli.</p>
-                <p>Press <strong>${key1}</strong> for ${block.stimulusTypes[0]} and <strong>${key2}</strong> for ${block.stimulusTypes[1]}.</p>
-                <p>First, you'll complete ${block.trainingTrials} training trials with feedback.</p>
-                <p>Then you'll take a break.</p>
-                <p>Finally, you'll complete the main trials.</p>
-            `;
-            document.getElementById('startButton').style.display = 'block';
-            currentPhase = 'instructions';
+            showPartScreen();
         }
         
         function prepareBlock() {
@@ -433,10 +420,10 @@
                         showCompletion();
                         return;
                     }
-                    initializeBlock();
-                    document.getElementById('instructions').style.display = 'block';
-                    document.getElementById('startButton').style.display = 'block';
+                    currentPart++;
                     document.getElementById('stimulusImage').style.display = 'none';
+                    document.getElementById('feedbackSquare').style.display = 'none';
+                    initializeBlock();
                     return;
                 }
                 
@@ -483,18 +470,12 @@
         }
         
         function showBreak() {
-            currentPhase = 'break';
+            currentPart++;
+            resumeAfterBreak = true;
             document.getElementById('stimulusImage').style.display = 'none';
             document.getElementById('textOverlay').style.display = 'none';
-            document.getElementById('breakScreen').style.display = 'block';
-        }
-        
-        function continueAfterBreak() {
-            currentPhase = 'main';
-            // currentTrialIndex is already at breakAfterTrial, continue from there
-            document.getElementById('breakScreen').style.display = 'none';
-            document.getElementById('stimulusImage').style.display = 'block';
-            presentTrial();
+            document.getElementById('feedbackSquare').style.display = 'none';
+            showPartScreen();
         }
         
         function showCompletion() {
@@ -572,11 +553,6 @@
         
         // Keyboard input
         document.addEventListener('keydown', (e) => {
-            if (currentPhase === 'break') {
-                continueAfterBreak();
-                return;
-            }
-            
             if (currentPhase === 'instructions') {
                 return;
             }
@@ -728,9 +704,11 @@
                 currentTrialIndex++;
                 
                 if (currentTrialIndex === breakAfterTrial) {
-                    isIntertrialInterval = false;
-                    hideFeedback();
-                    showBreak();
+                    setTimeout(() => {
+                        isIntertrialInterval = false;
+                        hideFeedback();
+                        showBreak();
+                    }, feedbackDuration);
                     return;
                 }
             }
@@ -742,9 +720,18 @@
             }, feedbackDuration);
         }
         
-        // Start button
+        // Start button handles both new blocks and resuming after break
         document.getElementById('startButton').addEventListener('click', () => {
-            startBlock();
+            if (resumeAfterBreak) {
+                resumeAfterBreak = false;
+                currentPhase = 'main';
+                document.getElementById('instructions').style.display = 'none';
+                document.getElementById('startButton').style.display = 'none';
+                document.getElementById('stimulusImage').style.display = 'block';
+                presentTrial();
+            } else {
+                startBlock();
+            }
         });
         
         // Initialize
