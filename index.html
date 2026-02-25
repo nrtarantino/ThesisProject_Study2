@@ -343,14 +343,13 @@
             
             block.stimulusTypes.forEach(stimType => {
                 for (let pairIdx = 0; pairIdx < 4; pairIdx++) {
-                    const pairStimuli = blockStimuli.filter(s => 
+                    const pairStimuli = shuffleArray(blockStimuli.filter(s => 
                         s.stimulus_name === stimType && s.pair_idx === pairIdx
-                    );
+                    ));
                     
-                    // Randomly select trialsPerPair stimuli from this pair
-                    for (let i = 0; i < trialsPerPair; i++) {
-                        const randomIdx = Math.floor(Math.random() * pairStimuli.length);
-                        const selected = pairStimuli[randomIdx];
+                    // Select trialsPerPair stimuli from this shuffled pair (no duplicates)
+                    for (let i = 0; i < trialsPerPair && i < pairStimuli.length; i++) {
+                        const selected = pairStimuli[i];
                         trainingTrials.push(selected);
                         usedStimuliIndices.add(selected.index);
                     }
@@ -405,8 +404,8 @@
             }
             
             // Prepare main trials pool: all remaining stimuli (will be drawn from randomly)
-            // Cut in half - only use first half of remaining stimuli
-            const allRemaining = blockStimuli.filter(s => !usedStimuliIndices.has(s.index));
+            // Shuffle first so we get an even mix of types, then take half
+            const allRemaining = shuffleArray(blockStimuli.filter(s => !usedStimuliIndices.has(s.index)));
             const halfCount = Math.floor(allRemaining.length / 2);
             mainTrialsPool = allRemaining.slice(0, halfCount);
             
@@ -430,7 +429,7 @@
             extendedTrialIndex = 0; // Reset extended training index
             trainingResponses = []; // Reset training responses
             initialTrainingComplete = false; // Reset flag
-            breakAfterTrial = 232; // Reset break counter for each block
+            breakAfterTrial = 120; // Reset break counter for each block (halfway through ~240)
             document.getElementById('instructions').style.display = 'none';
             document.getElementById('startButton').style.display = 'none';
             document.getElementById('stimulusImage').style.display = 'block';
@@ -624,31 +623,13 @@
             }
             const reactionTime = Date.now() - trialStartTime;
             
-            let trial;
-            if (currentPhase === 'training') {
-                // Get trial based on whether we're in initial 32 or extended training
-                if (initialTrainingComplete) {
-                    // Use shuffled extended pool
-                    if (extendedTrialIndex >= trainingTrialsExtended.length) {
-                        console.log('Reshuffling extended pool in handleResponse');
-                        trainingTrialsExtended = shuffleArray([...trainingTrialsPool]);
-                        extendedTrialIndex = 0;
-                    }
-                    trial = trainingTrialsExtended[extendedTrialIndex];
-                    console.log(`handleResponse - Extended: index ${extendedTrialIndex}, stimulus: ${trial.stimulus_name}`);
-                } else {
-                    trial = trainingTrials[currentTrialIndex];
-                    console.log(`handleResponse - Initial: index ${currentTrialIndex}, stimulus: ${trial.stimulus_name}`);
-                }
-            } else {
-                // Use the trial that was selected in presentTrial
-                trial = window.currentTrial;
-                if (!trial) {
-                    console.error('No current trial found!');
-                    return;
-                }
-                console.log(`handleResponse - Main: remaining ${mainTrialsPool.length} in pool, stimulus: ${trial.stimulus_name}`);
+            // Always use the trial that was set in presentTrial
+            let trial = window.currentTrial;
+            if (!trial) {
+                console.error('No current trial found!');
+                return;
             }
+            console.log(`handleResponse - ${currentPhase}: stimulus: ${trial.stimulus_name}`);
             
             const correctKey = getCorrectKey(trial.stimulus_name);
             const correct = key === correctKey;
