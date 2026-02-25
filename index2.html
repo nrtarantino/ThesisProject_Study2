@@ -214,6 +214,16 @@
             }
         ];
         
+        // Shuffle array function (used for training trials)
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+        
         // Determine block order based on C parameter
         // blockOrder=1: Trend first, then Big/Small
         // blockOrder=2: Big/Small first, then Trend
