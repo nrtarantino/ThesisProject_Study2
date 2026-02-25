@@ -386,11 +386,8 @@
                 trainingTrials = [...explanationTrials, ...trainingTrials];
             }
             
-            // Prepare main trials pool: all remaining stimuli (will be drawn from randomly)
-            // Shuffle first so we get an even mix of types, then take half
-            const allRemaining = shuffleArray(blockStimuli.filter(s => !usedStimuliIndices.has(s.index)));
-            const halfCount = Math.floor(allRemaining.length / 2);
-            mainTrialsPool = allRemaining.slice(0, halfCount);
+            // Prepare main trials pool: all remaining stimuli (drawn randomly during trials)
+            mainTrialsPool = blockStimuli.filter(s => !usedStimuliIndices.has(s.index));
             
         }
         
