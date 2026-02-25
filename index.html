@@ -124,8 +124,12 @@
         // C=2: Response code 1, Order 2 (Big/Small first)
         // C=3: Response code 2, Order 1 (Trend first)
         // C=4: Response code 2, Order 2 (Big/Small first)
+        const QUALTRICS_ORIGIN = 'https://uwmadison.co1.qualtrics.com';
+
         const urlParams = new URLSearchParams(window.location.search);
         const C = parseInt(urlParams.get('C')) || null;
+        const sonaId = urlParams.get('id') || '';
+        const qualtricsResponseId = urlParams.get('ResponseID') || '';
         
         // Determine response code and block order from C (2x2 crossed)
         let responseCode; // 1 or 2
@@ -501,6 +505,72 @@
             document.getElementById('textOverlay').style.display = 'none';
             document.getElementById('instructions').style.display = 'block';
             document.getElementById('instructionText').innerHTML = '<h2>Task Complete!</h2><p>Thank you for participating.</p>';
+            exportTrialData();
+        }
+        
+        function exportTrialData() {
+            if (trialData.length === 0) return;
+            
+            const headers = ['sonaId','qualtricsResponseId','trialNumber','stimulusIndex','n','slope','noise','responseCode','blockOrder','accuracy','reactionTime','trialType'];
+            let csv = headers.join(',') + '\n';
+            
+            trialData.forEach(t => {
+                csv += [
+                    sonaId,
+                    qualtricsResponseId,
+                    t.trialNumber,
+                    t.stimulusIndex,
+                    t.n,
+                    t.slope !== null ? t.slope.toFixed(6) : '',
+                    t.noise,
+                    t.responseCode,
+                    t.blockOrder,
+                    t.accuracy,
+                    t.reactionTime,
+                    t.trialType
+                ].join(',') + '\n';
+            });
+            
+            const filename = `study2_${qualtricsResponseId || sonaId || Date.now()}.csv`;
+            
+            fetch("https://pipe.jspsych.org/api/data/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "*/*",
+                },
+                body: JSON.stringify({
+                    experimentID: "1IQX1jXTAEW6",
+                    filename: filename,
+                    data: csv,
+                }),
+            })
+            .then(() => { finishAndReturn(); })
+            .catch(() => { finishAndReturn(); });
+        }
+        
+        function finishAndReturn() {
+            function sendDone() {
+                try {
+                    if (window.opener && !window.opener.closed) {
+                        window.opener.postMessage('{"type":"TASK_DONE"}', QUALTRICS_ORIGIN);
+                        window.opener.postMessage({ type: 'TASK_DONE' }, QUALTRICS_ORIGIN);
+                        return true;
+                    }
+                } catch (e) {}
+                return false;
+            }
+            
+            sendDone();
+            setTimeout(sendDone, 75);
+            setTimeout(sendDone, 200);
+            
+            setTimeout(function() {
+                window.close();
+                setTimeout(function() {
+                    document.getElementById('instructionText').textContent = 'Task complete. Please return to your Qualtrics tab to continue.';
+                }, 150);
+            }, 150);
         }
         
         // Keyboard input
@@ -539,28 +609,18 @@
         function recordTrialData(trial, responseKey, correct, reactionTime) {
             globalTrialNumber++;
             
-            const trialDataEntry = {
+            trialData.push({
                 trialNumber: globalTrialNumber,
-                block: currentBlock + 1,
-                blockName: BLOCKS[currentBlock].name,
-                phase: currentPhase,
-                trialIndex: currentTrialIndex,
                 stimulusIndex: trial.index,
-                stimulusName: trial.stimulus_name,
-                stimulusPath: trial.path,
-                pairIdx: trial.pair_idx,
-                slope: trial.slope,
                 n: trial.n,
-                sigma: trial.sigma,
-                responseKey: responseKey,
-                correctKey: getCorrectKey(trial.stimulus_name),
+                slope: trial.slope,
+                noise: trial.sigma,
+                responseCode: responseCode,
+                blockOrder: blockOrder,
                 accuracy: correct,
                 reactionTime: reactionTime,
-                isExplanation: trial.isExplanation || false,
-                participantCondition: participantCondition
-            };
-            
-            trialData.push(trialDataEntry);
+                trialType: trial.isExplanation ? 'explanation' : currentPhase
+            });
         }
         
         function handleResponse(key) {
