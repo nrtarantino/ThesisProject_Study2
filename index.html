@@ -244,6 +244,12 @@
                     manifest.push(entry);
                 }
                 
+                // Preload all stimulus images into browser cache
+                manifest.forEach(entry => {
+                    const img = new Image();
+                    img.src = `stimuli/${entry.path}`;
+                });
+                
                 showInitialInstructions();
             } catch (error) {
                 document.getElementById('instructionText').textContent = 'Error loading stimuli. Please check that manifest.csv exists.';
