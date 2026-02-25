@@ -75,25 +75,16 @@
         
         .button {
             margin: 20px auto 0;
-            padding: 15px 30px;
-            font-size: 18px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
             cursor: pointer;
             display: block;
-        }
-        
-        .button:hover {
-            background-color: #45a049;
         }
     </style>
 </head>
 <body>
     <div id="container">
         <div id="instructions">
-            <h1>Categorization Task</h1>
             <p id="instructionText">Loading...</p>
             <button id="startButton" class="button" style="display: none;">Start</button>
         </div>
@@ -282,7 +273,7 @@
         
         function showPartScreen() {
             document.getElementById('instructionText').innerHTML = `
-                <h2>Part ${currentPart} of 4</h2>
+                <p>Part ${currentPart} of 4</p>
                 <p>${DIRECTIONS_TEXT}</p>
             `;
             document.getElementById('instructions').style.display = 'block';
