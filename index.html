@@ -5,1115 +5,765 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Categorization Task</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
             margin: 0;
             padding: 0;
             background-color: #1a1a1a;
+            color: white;
+            font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            overflow: hidden;
+            flex-direction: column;
         }
-
-        .canvas-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        
+        #container {
+            text-align: center;
             position: relative;
         }
-
-        .canvas-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        
+        #stimulusImage {
+            width: 100vw;
+            height: 100vh;
+            object-fit: contain;
+            display: none;
         }
-
-        canvas {
-            background: #1a1a1a;
-        }
-
-        .instruction-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #1a1a1a;
-            color: #fff;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            padding: 40px;
-        }
-
-        .block-info {
-            display: none; /* Hidden - removed per user request */
-        }
-
-        .instruction-text {
+        
+        #textOverlay {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
             font-size: 24px;
+            font-weight: bold;
             text-align: center;
-            margin-bottom: 40px;
+            z-index: 10;
+            display: none;
+            text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
+        }
+        
+        #debugInfo {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 1001;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        #instructions {
             max-width: 800px;
+            padding: 20px;
+            font-size: 18px;
             line-height: 1.6;
         }
-
-        .start-button {
-            padding: 15px 40px;
-            font-size: 18px;
-            background-color: #4a9eff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.2s;
+        
+        #breakScreen {
+            display: none;
+            max-width: 600px;
+            padding: 20px;
+            font-size: 20px;
         }
-
-        .start-button:hover {
-            background-color: #3a8eef;
-        }
-
-        .feedback-screen {
+        
+        #feedbackSquare {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 999;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            z-index: 1000;
+            display: none;
+            border: 2px solid #000;
         }
-
-        .feedback-screen.correct {
+        
+        #feedbackSquare.correct {
             background-color: #00ff00;
         }
-
-        .feedback-screen.incorrect {
+        
+        #feedbackSquare.incorrect {
             background-color: #ff0000;
         }
-
-        .white-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #ffffff;
-            z-index: 998;
+        
+        .button {
+            margin: 20px auto 0;
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: block;
         }
-
-        .hidden {
-            display: none;
+        
+        .button:hover {
+            background-color: #45a049;
         }
     </style>
 </head>
 <body>
-    <div class="instruction-screen" id="instructionScreen">
-        <div class="block-info" id="blockInfo"></div>
-        <div class="instruction-text" id="instructionText">
-            Instructions will appear here
+    <div id="container">
+        <div id="instructions">
+            <h1>Categorization Task</h1>
+            <p id="instructionText">Loading...</p>
+            <button id="startButton" class="button" style="display: none;">Start</button>
         </div>
-        <button class="start-button" id="startButton">Start</button>
-    </div>
-    
-    <div class="white-screen hidden" id="whiteScreen"></div>
-    <div class="feedback-screen hidden" id="feedbackScreen"></div>
-    
-    <div class="canvas-container">
-        <div class="canvas-wrapper">
-            <canvas id="scatterplotCanvas" width="900" height="900"></canvas>
+        
+        <img id="stimulusImage" alt="Stimulus">
+        <div id="textOverlay"></div>
+        <div id="debugInfo"></div>
+        
+        <div id="breakScreen">
+            <h2>Break</h2>
+            <p>Take a moment to rest. Press any key when you're ready to continue.</p>
         </div>
+        
+        <div id="feedbackSquare"></div>
     </div>
 
     <script>
-        const canvas = document.getElementById('scatterplotCanvas');
-        const ctx = canvas.getContext('2d');
+        // Extract counterbalancing parameter from URL
+        // C parameter determines both response code (condition) and block order (2x2 design)
+        // Response code: 1 or 2 (determines key mapping)
+        // Order: 1 or 2 (determines block order)
+        // C=1: Response code 1, Order 1 (Trend first)
+        // C=2: Response code 1, Order 2 (Big/Small first)
+        // C=3: Response code 2, Order 1 (Trend first)
+        // C=4: Response code 2, Order 2 (Big/Small first)
+        const urlParams = new URLSearchParams(window.location.search);
+        const C = parseInt(urlParams.get('C')) || null;
         
-        // Constants
-        const CANVAS_SIZE = 900;
-        const MARGIN = 90;
-        const PLOT_SIZE = CANVAS_SIZE - 2 * MARGIN;
-        const DOT_RADIUS = 5; // pixels (approximately 2mm)
+        // Determine response code and block order from C (2x2 crossed)
+        let responseCode; // 1 or 2
+        let blockOrder;    // 1 or 2
         
-        // Qualtrics integration
-        const QUALTRICS_ORIGIN = 'https://uwmadison.co1.qualtrics.com';
-        
-        // Noise parameter (will be set per big block)
-        let SIGMA = 0.1;
-        
-        // Axes visibility toggle - set to true to show axes, false to hide them
-        const SHOW_AXES = false;
-        
-        // Probe trials toggle - set to true to include probe trials, false to omit them
-        const INCLUDE_PROBE_TRIALS = true;
-        
-        // Key mapping - swap these values to change the mapping
-        const STIMULUS_A_KEY = 'L';  // Key to press for Stimulus A
-        const STIMULUS_B_KEY = 'A';  // Key to press for Stimulus B
-        
-        // Big block structure
-        let currentBigBlockIndex = 0;
-        
-        // Define big blocks with their noise parameters
-        const BIG_BLOCKS_ORIGINAL = [
-            { sigma: 0.15},
-            { sigma: 0.225},
-            { sigma: 0.4},
-            
-            // Add more big blocks as needed
-        ];
-        
-        // Randomize the order of big blocks
-        function shuffleArray(array) {
-            const shuffled = [...array];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            return shuffled;
+        if (C !== null && C >= 1 && C <= 4) {
+            // Response code: C=1,2 → Response code 1; C=3,4 → Response code 2
+            responseCode = (C === 1 || C === 2) ? 1 : 2;
+            // Order: C=1,3 → Order 1 (Trend first); C=2,4 → Order 2 (Big/Small first)
+            blockOrder = (C === 1 || C === 3) ? 1 : 2;
+            participantCondition = responseCode; // Use responseCode for condition
+        } else {
+            // Fallback to random if C not provided or invalid
+            responseCode = Math.random() < 0.5 ? 1 : 2;
+            blockOrder = Math.random() < 0.5 ? 1 : 2;
+            participantCondition = responseCode;
+            console.warn(`Invalid or missing C parameter (got: ${C}), using random assignment`);
         }
         
-        const BIG_BLOCKS = shuffleArray(BIG_BLOCKS_ORIGINAL);
-        
-        // Stimulus definitions
-        const STIMULUS_A = {
-            name: 'A',
-            pairs: [
-                { slope: -0.6, n: 8 },
-                { slope: -0.5, n: 9 },
-                { slope: -0.4, n: 10 },
-                { slope: -0.3, n: 11 }
-            ]
-        }; 
-        
-        const STIMULUS_B = {
-            name: 'B',
-            pairs: [
-                { slope: 0.6, n: 25 },
-                { slope: 0.5, n: 24 },
-                { slope: 0.4, n: 23 },
-                { slope: 0.3, n: 22 }
-            ]
+        // Key mappings based on condition
+        const KEY_MAPPING = {
+            condition1: {
+                'Trend_Up': 'L',
+                'Trend_Down': 'A',
+                'Big': 'L',
+                'Small': 'A'
+            },
+            condition2: {
+                'Trend_Up': 'A',
+                'Trend_Down': 'L',
+                'Big': 'A',
+                'Small': 'L'
+            }
         };
         
-        // Function to get stimulus parameters
-        function getStimulusParams(stimulusType) {
-            return stimulusType === 'A' ? STIMULUS_A : STIMULUS_B;
+        function getCorrectKey(stimulusName) {
+            const condition = participantCondition === 1 ? 'condition1' : 'condition2';
+            return KEY_MAPPING[condition][stimulusName];
         }
         
-        // Axis range: extend 0.25 on each side
-        const X_MIN = -0.3;
-        const X_MAX = 1.3;
-        const Y_MIN = -0.3;
-        const Y_MAX = 1.3;
+        // Load manifest CSV
+        let manifest = [];
+        let currentBlock = 0;
+        let currentPhase = 'instructions'; // 'instructions', 'training', 'break', 'main'
+        let currentTrialIndex = 0;
+        let trainingTrials = [];
+        let trainingTrialsPool = []; // All training stimuli for random selection
+        let trainingTrialsExtended = []; // Shuffled pool for extended training
+        let extendedTrialIndex = 0; // Index for extended training
+        let trainingResponses = []; // Track training trial responses (true/false)
+        let mainTrialsPool = []; // Pool of available main trials (will be drawn from randomly)
+        let usedStimuliIndices = new Set();
+        let breakAfterTrial = 120; // Break after 120 trials in main section (halfway through 240)
+        let initialTrainingComplete = false; // Track if initial 32 trials are done
+        let trialStartTime = 0; // Track when trial started
+        let trialData = []; // Store all trial data
+        let globalTrialNumber = 0; // Global trial counter
+        let isIntertrialInterval = false; // Track if we're in intertrial interval
         
-        // Generate random number from normal distribution (Box-Muller transform)
-        function randomNormal(mean = 0, stdDev = 1) {
-            if (stdDev === 0) return mean;
-            const u1 = Math.random();
-            const u2 = Math.random();
-            const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
-            return z0 * stdDev + mean;
+        const BLOCKS_ORIGINAL = [
+            {
+                name: 'Trend',
+                stimulusTypes: ['Trend_Up', 'Trend_Down'],
+                trainingTrials: 16
+            },
+            {
+                name: 'Big/Small',
+                stimulusTypes: ['Big', 'Small'],
+                trainingTrials: 16
+            }
+        ];
+        
+        // Determine block order based on C parameter
+        // blockOrder=1: Trend first, then Big/Small
+        // blockOrder=2: Big/Small first, then Trend
+        let BLOCKS;
+        if (blockOrder === 1) {
+            BLOCKS = [...BLOCKS_ORIGINAL]; // Trend, Big/Small
+        } else {
+            BLOCKS = [BLOCKS_ORIGINAL[1], BLOCKS_ORIGINAL[0]]; // Big/Small, Trend
         }
         
-        // Generate scatterplot data according to the algorithm
-        function generateData(n, alpha, sigma) {
-            let valid = false;
-            let x, y;
+        console.log(`Counterbalancing: C=${C}, responseCode=${responseCode}, blockOrder=${blockOrder}, blocks: ${BLOCKS.map(b => b.name).join(' -> ')}`);
+        
+        // Load manifest CSV
+        async function loadManifest() {
+            try {
+                const response = await fetch('stimuli/manifest.csv');
+                const text = await response.text();
+                const lines = text.split('\n');
+                const headers = lines[0].split(',');
+                
+                for (let i = 1; i < lines.length; i++) {
+                    if (lines[i].trim() === '') continue;
+                    
+                    const values = parseCSVLine(lines[i]);
+                    if (values.length < headers.length) continue;
+                    
+                    const entry = {};
+                    headers.forEach((header, idx) => {
+                        entry[header.trim()] = values[idx] ? values[idx].trim() : '';
+                    });
+                    
+                    // Convert numeric fields
+                    entry.index = parseInt(entry.index);
+                    entry.pair_idx = parseInt(entry.pair_idx);
+                    entry.slope = parseFloat(entry.slope);
+                    entry.n = parseInt(entry.n);
+                    entry.sigma = parseFloat(entry.sigma);
+                    entry.version = parseInt(entry.version);
+                    
+                    manifest.push(entry);
+                }
+                
+                console.log(`Loaded ${manifest.length} stimuli from manifest`);
+                console.log(`Participant assigned to condition ${participantCondition}`);
+                showInitialInstructions();
+            } catch (error) {
+                console.error('Error loading manifest:', error);
+                document.getElementById('instructionText').textContent = 'Error loading stimuli. Please check that manifest.csv exists.';
+            }
+        }
+        
+        // Parse CSV line handling quoted values
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
             
-            while (!valid) {
-                // Generate equally spaced x values from 0 to 1
-                x = [];
-                for (let i = 0; i < n; i++) {
-                    x.push(i / (n - 1));
-                }
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
                 
-                // Generate y values: yi = α * xi + εi
-                y = [];
-                for (let i = 0; i < n; i++) {
-                    const epsilon = sigma > 0 ? randomNormal(0, sigma) : 0;
-                    y.push(alpha * x[i] + epsilon);
-                }
-                
-                // Adjust vertically so center of mass (mean) of y-values is at 0.5
-                const meanY = y.reduce((sum, val) => sum + val, 0) / n;
-                const adjustment = 0.5 - meanY;
-                y = y.map(yi => yi + adjustment);
-                
-                // Check if all points are within bounds AFTER adjustment
-                valid = true;
-                for (let i = 0; i < n; i++) {
-                    if (y[i] < -0.27 || y[i] > 1.27) {
-                        valid = false;
-                        break;
-                    }
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
                 }
             }
-            
-            return { x, y };
+            result.push(current);
+            return result;
         }
         
-        // Convert normalized coordinates to canvas coordinates
-        function toCanvasX(normalizedX) {
-            const normalized = (normalizedX - X_MIN) / (X_MAX - X_MIN);
-            return MARGIN + normalized * PLOT_SIZE;
+        function showInitialInstructions() {
+            document.getElementById('instructionText').innerHTML = `
+                <p>Use the directions and feedback to respond with the A and L keys. A Green square indicates you selected correctly; a red square indicates you selected incorrectly. On some trials, you will not receive feedback. This is normal. Please keep responding based on what rule you remember.</p>
+            `;
+            document.getElementById('startButton').style.display = 'block';
+            currentPhase = 'instructions';
         }
         
-        function toCanvasY(normalizedY) {
-            const normalized = (normalizedY - Y_MIN) / (Y_MAX - Y_MIN);
-            return MARGIN + (1 - normalized) * PLOT_SIZE;
-        }
-        
-        // Draw axes with ticks
-        function drawAxes(ctx) {
-            if (!SHOW_AXES) {
+        function initializeBlock() {
+            if (currentBlock >= BLOCKS.length) {
+                document.getElementById('instructionText').textContent = 'Task complete! Thank you.';
                 return;
             }
             
-            ctx.strokeStyle = '#888';
-            ctx.lineWidth = 1;
+            const block = BLOCKS[currentBlock];
+            const key1 = getCorrectKey(block.stimulusTypes[0]);
+            const key2 = getCorrectKey(block.stimulusTypes[1]);
             
-            // Draw x-axis
-            const xAxisY = toCanvasY(Y_MIN);
-            ctx.beginPath();
-            ctx.moveTo(toCanvasX(X_MIN), xAxisY);
-            ctx.lineTo(toCanvasX(X_MAX), xAxisY);
-            ctx.stroke();
+            document.getElementById('instructionText').innerHTML = `
+                <h2>Block ${currentBlock + 1}: ${block.name}</h2>
+                <p>In this block, you will categorize ${block.stimulusTypes.join(' and ')} stimuli.</p>
+                <p>Press <strong>${key1}</strong> for ${block.stimulusTypes[0]} and <strong>${key2}</strong> for ${block.stimulusTypes[1]}.</p>
+                <p>First, you'll complete ${block.trainingTrials} training trials with feedback.</p>
+                <p>Then you'll take a break.</p>
+                <p>Finally, you'll complete the main trials.</p>
+            `;
+            document.getElementById('startButton').style.display = 'block';
+            currentPhase = 'instructions';
+        }
+        
+        function prepareBlock() {
+            const block = BLOCKS[currentBlock];
+            usedStimuliIndices.clear();
             
-            // Draw y-axis
-            const yAxisX = toCanvasX(X_MIN);
-            ctx.beginPath();
-            ctx.moveTo(yAxisX, toCanvasY(Y_MIN));
-            ctx.lineTo(yAxisX, toCanvasY(Y_MAX));
-            ctx.stroke();
+            // Get all stimuli for this block
+            const blockStimuli = manifest.filter(s => 
+                block.stimulusTypes.includes(s.stimulus_name)
+            );
             
-            // Draw ticks
-            const tickPositions = [0, 0.5, 1];
-            const tickLength = 5;
+            // Prepare training trials: 16 trials, evenly distributed
+            // 8 per stimulus type, 2 per pair_idx (4 levels)
+            trainingTrials = [];
+            const trialsPerPair = 2; // 16 total / 2 types / 4 pairs = 2 per pair
             
-            tickPositions.forEach(pos => {
-                // X-axis ticks
-                const x = toCanvasX(pos);
-                ctx.beginPath();
-                ctx.moveTo(x, xAxisY);
-                ctx.lineTo(x, xAxisY + tickLength);
-                ctx.stroke();
-                
-                // Y-axis ticks
-                const y = toCanvasY(pos);
-                ctx.beginPath();
-                ctx.moveTo(yAxisX, y);
-                ctx.lineTo(yAxisX - tickLength, y);
-                ctx.stroke();
+            block.stimulusTypes.forEach(stimType => {
+                for (let pairIdx = 0; pairIdx < 4; pairIdx++) {
+                    const pairStimuli = blockStimuli.filter(s => 
+                        s.stimulus_name === stimType && s.pair_idx === pairIdx
+                    );
+                    
+                    // Randomly select trialsPerPair stimuli from this pair
+                    for (let i = 0; i < trialsPerPair; i++) {
+                        const randomIdx = Math.floor(Math.random() * pairStimuli.length);
+                        const selected = pairStimuli[randomIdx];
+                        trainingTrials.push(selected);
+                        usedStimuliIndices.add(selected.index);
+                    }
+                }
             });
-        }
-        
-        // Calculate slope using linear regression
-        function calculateSlope(data) {
-            const n = data.x.length;
-            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
             
-            for (let i = 0; i < n; i++) {
-                sumX += data.x[i];
-                sumY += data.y[i];
-                sumXY += data.x[i] * data.y[i];
-                sumX2 += data.x[i] * data.x[i];
-            }
+            // Store all training stimuli in pool for random selection later
+            trainingTrialsPool = [...trainingTrials];
             
-            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-            return slope;
-        }
-        
-        // Calculate R-squared
-        function calculateRSquared(data) {
-            const n = data.x.length;
-            if (n < 2) return 0;
+            // Create shuffled extended training pool (will be reshuffled when needed)
+            trainingTrialsExtended = shuffleArray([...trainingTrials]);
+            extendedTrialIndex = 0;
             
-            const meanY = data.y.reduce((sum, val) => sum + val, 0) / n;
+            // Shuffle training trials
+            trainingTrials = shuffleArray(trainingTrials);
             
-            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
-            for (let i = 0; i < n; i++) {
-                sumX += data.x[i];
-                sumY += data.y[i];
-                sumXY += data.x[i] * data.y[i];
-                sumX2 += data.x[i] * data.x[i];
-            }
+            // First 2 training trials are explanation trials
+            // Make sure we have one of each stimulus type
+            const explanationTrials = [];
+            const firstType = block.stimulusTypes[0];
+            const secondType = block.stimulusTypes[1];
             
-            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-            const intercept = (sumY - slope * sumX) / n;
+            // Find one of each type for explanation
+            const firstTypeStim = trainingTrials.find(t => t.stimulus_name === firstType);
+            const secondTypeStim = trainingTrials.find(t => t.stimulus_name === secondType);
             
-            let ssRes = 0;
-            let ssTot = 0;
-            
-            for (let i = 0; i < n; i++) {
-                const yPredicted = slope * data.x[i] + intercept;
-                const residual = data.y[i] - yPredicted;
-                ssRes += residual * residual;
+            if (firstTypeStim && secondTypeStim) {
+                // Remove from training trials
+                trainingTrials = trainingTrials.filter(t => 
+                    t.index !== firstTypeStim.index && t.index !== secondTypeStim.index
+                );
                 
-                const deviation = data.y[i] - meanY;
-                ssTot += deviation * deviation;
+                // Add as explanation trials
+                explanationTrials.push({
+                    ...firstTypeStim,
+                    isExplanation: true,
+                    category: 1,
+                    correctKey: getCorrectKey(firstTypeStim.stimulus_name)
+                });
+                explanationTrials.push({
+                    ...secondTypeStim,
+                    isExplanation: true,
+                    category: 2,
+                    correctKey: getCorrectKey(secondTypeStim.stimulus_name)
+                });
+                
+                // Shuffle explanation trials
+                shuffleArray(explanationTrials);
+                
+                // Add back to beginning of training trials
+                trainingTrials = [...explanationTrials, ...trainingTrials];
             }
             
-            if (ssTot === 0) return 1;
-            const rSquared = 1 - (ssRes / ssTot);
-            return rSquared;
-        }
-        
-        // Draw scatterplot
-        function drawScatterplot(ctx, data) {
-            ctx.fillStyle = '#fff';
+            // Prepare main trials pool: all remaining stimuli (will be drawn from randomly)
+            // Cut in half - only use first half of remaining stimuli
+            const allRemaining = blockStimuli.filter(s => !usedStimuliIndices.has(s.index));
+            const halfCount = Math.floor(allRemaining.length / 2);
+            mainTrialsPool = allRemaining.slice(0, halfCount);
             
-            data.x.forEach((xi, i) => {
-                const canvasX = toCanvasX(xi);
-                const canvasY = toCanvasY(data.y[i]);
-                
-                ctx.beginPath();
-                ctx.arc(canvasX, canvasY, DOT_RADIUS, 0, 2 * Math.PI);
-                ctx.fill();
+            // Debug: Check distribution of main trials pool
+            const mainTrialTypes = {};
+            mainTrialsPool.forEach(t => {
+                mainTrialTypes[t.stimulus_name] = (mainTrialTypes[t.stimulus_name] || 0) + 1;
             });
+            
+            console.log(`Block ${currentBlock + 1}: ${trainingTrials.length} training, ${mainTrialsPool.length} main trials available`);
+            console.log(`Main trials distribution:`, mainTrialTypes);
+            console.log(`Used stimuli indices count: ${usedStimuliIndices.size}`);
+            console.log(`Total block stimuli: ${blockStimuli.length}`);
         }
         
-        // Generate a stimulus
-        function generateStimulus(stimulusType, specificSlope = null, specificN = null) {
-            let n, slopeParam;
-            
-            if (specificSlope !== null && specificN !== null) {
-                n = specificN;
-                slopeParam = specificSlope;
-            } else {
-                const params = getStimulusParams(stimulusType);
-                const pair = params.pairs[Math.floor(Math.random() * params.pairs.length)];
-                n = pair.n;
-                slopeParam = pair.slope;
-            }
-            
-            const data = generateData(n, slopeParam, SIGMA);
-            const calculatedSlope = calculateSlope(data);
-            const rSquared = calculateRSquared(data);
-            const actualN = data.x.length;
-            
-            return {
-                data: data,
-                n: actualN,
-                slope: calculatedSlope,
-                rSquared: rSquared,
-                slopeParam: slopeParam
-            };
+        
+        function startBlock() {
+            prepareBlock();
+            currentPhase = 'training';
+            currentTrialIndex = 0;
+            extendedTrialIndex = 0; // Reset extended training index
+            trainingResponses = []; // Reset training responses
+            initialTrainingComplete = false; // Reset flag
+            breakAfterTrial = 232; // Reset break counter for each block
+            document.getElementById('instructions').style.display = 'none';
+            document.getElementById('startButton').style.display = 'none';
+            document.getElementById('stimulusImage').style.display = 'block';
+            presentTrial();
         }
         
-        // Qualtrics data collection
-        let participantIdFromUrl = null;
-        let sonaId = null;
-        let qualtricsResponseId = null;
-        
-        // Extract Qualtrics data from URL parameters on page load
-        window.addEventListener('DOMContentLoaded', function() {
-            const params = new URLSearchParams(window.location.search);
-            
-            // Capture both IDs separately
-            sonaId = params.get('id');
-            qualtricsResponseId = params.get('ResponseID');
-            
-            // Primary ID for main use (priority: id > ResponseID > PID > pid)
-            participantIdFromUrl = sonaId || qualtricsResponseId || params.get('PID') || params.get('pid');
-            
-            if (participantIdFromUrl) {
-                if (sonaId) console.log('SONA ID:', sonaId);
-                if (qualtricsResponseId) console.log('Qualtrics ResponseID:', qualtricsResponseId);
-            } else {
-                console.warn('No participant ID found in URL parameters. Expected id, ResponseID, PID, or pid.');
-            }
-        });
-        
-        // Trial management
-        let currentTrialIndex = 0;
-        let trials = [];
-        let trainingTrials = [];
-        let explanationTrials = [];
-        let isInTrainingPhase = false;
-        let isInExplanationPhase = false;
-        let trainingTrialResults = [];
-        let trainingTrialResultsNonProbe = []; // Track only non-probe training trials for failure check
-        let regularTrialResultsNonProbe = []; // Track only non-probe regular trials for failure check
-        let needsRemedialExplanation = false; // Flag to insert explanation trials mid-training/regular
-        let trainingResumeIndex = 0; // Index to resume training after explanation trials
-        let regularResumeIndex = 0; // Index to resume regular trials after explanation trials
-        let trialStartTime = 0;
-        let responseReceived = false;
-        let trialTimeout = null;
-        let isWaitingForResponse = false;
-        
-        // Data recording
-        let globalTrialNumber = 0;
-        let trialData = [];
-        let currentTrialStimulusData = null;
-        
-        // Generate explanation trials (one A, one B, randomized)
-        function generateExplanationTrials(isRemedial = false) {
-            const prefix = isRemedial ? 'Recall ' : '';
-            const thisText = isRemedial ? 'this' : 'This';
-            
-            const explanationTrials = [
-                {
-                    stimulusType: 'A',
-                    correctResponse: STIMULUS_A_KEY,
-                    isProbe: false,
-                    trialType: 'explanation',
-                    explanationText: `${prefix}${thisText} array goes into category 1. Press the ${STIMULUS_A_KEY} key.`
-                },
-                {
-                    stimulusType: 'B',
-                    correctResponse: STIMULUS_B_KEY,
-                    isProbe: false,
-                    trialType: 'explanation',
-                    explanationText: `${prefix}${thisText} array goes into category 2. Press the ${STIMULUS_B_KEY} key.`
+        function presentTrial() {
+            let trial;
+            if (currentPhase === 'training') {
+                // After initial 32 trials, use shuffled extended pool
+                if (initialTrainingComplete) {
+                    // If we've gone through all extended trials, reshuffle
+                    if (extendedTrialIndex >= trainingTrialsExtended.length) {
+                        console.log('Reshuffling extended training pool');
+                        trainingTrialsExtended = shuffleArray([...trainingTrialsPool]);
+                        extendedTrialIndex = 0;
+                    }
+                    trial = trainingTrialsExtended[extendedTrialIndex];
+                    console.log(`Extended training: index ${extendedTrialIndex}/${trainingTrialsExtended.length}, stimulus: ${trial.stimulus_name}, n: ${trial.n}, slope: ${trial.slope}`);
+                } else {
+                    if (currentTrialIndex >= trainingTrials.length) {
+                        // This shouldn't happen - handleResponse should set initialTrainingComplete
+                        console.warn('Training index exceeded, switching to extended');
+                        initialTrainingComplete = true;
+                        extendedTrialIndex = 0;
+                        trial = trainingTrialsExtended[extendedTrialIndex];
+                    } else {
+                        trial = trainingTrials[currentTrialIndex];
+                        console.log(`Initial training: index ${currentTrialIndex}/${trainingTrials.length}, stimulus: ${trial.stimulus_name}, n: ${trial.n}, slope: ${trial.slope}`);
+                    }
                 }
-            ];
-            
-            // Randomize order
-            for (let i = explanationTrials.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [explanationTrials[i], explanationTrials[j]] = [explanationTrials[j], explanationTrials[i]];
-            }
-            
-            return explanationTrials;
-        }
-        
-        // Generate training trials
-        function generateTrainingTrials(count = 20) {
-            const newTrainingTrials = [];
-            
-            // Half A, half B
-            const halfCount = Math.floor(count / 2);
-            const remainder = count % 2;
-            
-            for (let i = 0; i < halfCount + remainder; i++) {
-                newTrainingTrials.push({
-                    stimulusType: 'A',
-                    correctResponse: STIMULUS_A_KEY,
-                    isProbe: false,
-                    trialType: 'training'
-                });
-            }
-            
-            for (let i = 0; i < halfCount; i++) {
-                newTrainingTrials.push({
-                    stimulusType: 'B',
-                    correctResponse: STIMULUS_B_KEY,
-                    isProbe: false,
-                    trialType: 'training'
-                });
-            }
-            
-            // Randomize
-            for (let i = newTrainingTrials.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [newTrainingTrials[i], newTrainingTrials[j]] = [newTrainingTrials[j], newTrainingTrials[i]];
-            }
-            
-            return newTrainingTrials;
-        }
-        
-        // Generate 94 regular trials + 58 probe trials
-        function generateTrials() {
-            const aParams = getStimulusParams('A');
-            const bParams = getStimulusParams('B');
-            
-            trials = [];
-            
-            // 47 regular trials with Stimulus A
-            for (let i = 0; i < 47; i++) {
-                trials.push({
-                    stimulusType: 'A',
-                    correctResponse: STIMULUS_A_KEY,
-                    isProbe: false,
-                    trialType: 'regular'
-                });
-            }
-            
-            // 47 regular trials with Stimulus B
-            for (let i = 0; i < 47; i++) {
-                trials.push({
-                    stimulusType: 'B',
-                    correctResponse: STIMULUS_B_KEY,
-                    isProbe: false,
-                    trialType: 'regular'
-                });
-            }
-            
-            // Probe trials (only if INCLUDE_PROBE_TRIALS is true)
-            if (INCLUDE_PROBE_TRIALS) {
-                // 29 probe trials: switch N values
-                for (let i = 0; i < 29; i++) {
-                    const aPair = aParams.pairs[Math.floor(Math.random() * aParams.pairs.length)];
-                    const bPair = bParams.pairs[Math.floor(Math.random() * bParams.pairs.length)];
-                    
-                    // Randomly assign which stimulus type to show
-                    const showA = Math.random() < 0.5;
-                    
-                    trials.push({
-                        stimulusType: showA ? 'A' : 'B',
-                        correctResponse: showA ? STIMULUS_A_KEY : STIMULUS_B_KEY,
-                        isProbe: true,
-                        probeType: 'switchN',
-                        trialType: 'probe',
-                        probeParams: {
-                            // Swapped N: use A's slope with B's N, or B's slope with A's N
-                            slope: showA ? aPair.slope : bPair.slope,
-                            n: showA ? bPair.n : aPair.n
-                        }
-                    });
+            } else if (currentPhase === 'main') {
+                if (mainTrialsPool.length === 0) {
+                    // Block complete
+                    console.log(`Block ${currentBlock + 1} complete!`);
+                    currentBlock++;
+                    if (currentBlock >= BLOCKS.length) {
+                        showCompletion();
+                        return;
+                    }
+                    initializeBlock();
+                    document.getElementById('instructions').style.display = 'block';
+                    document.getElementById('startButton').style.display = 'block';
+                    document.getElementById('stimulusImage').style.display = 'none';
+                    return;
                 }
                 
-                // 29 probe trials: switch slope values
-                for (let i = 0; i < 29; i++) {
-                    const aPair = aParams.pairs[Math.floor(Math.random() * aParams.pairs.length)];
-                    const bPair = bParams.pairs[Math.floor(Math.random() * bParams.pairs.length)];
-                    
-                    const showA = Math.random() < 0.5;
-                    
-                    trials.push({
-                        stimulusType: showA ? 'A' : 'B',
-                        correctResponse: showA ? STIMULUS_A_KEY : STIMULUS_B_KEY,
-                        isProbe: true,
-                        probeType: 'switchSlope',
-                        trialType: 'probe',
-                        probeParams: {
-                            // Swapped slope: use A's N with B's slope, or B's N with A's slope
-                            slope: showA ? bPair.slope : aPair.slope,
-                            n: showA ? aPair.n : bPair.n
-                        }
-                    });
-                }
+                // Randomly select from pool and remove it
+                const randomIdx = Math.floor(Math.random() * mainTrialsPool.length);
+                trial = mainTrialsPool[randomIdx];
+                mainTrialsPool.splice(randomIdx, 1); // Remove selected trial from pool
+                
+                console.log(`Main trial: remaining ${mainTrialsPool.length}, stimulus: ${trial.stimulus_name}, n: ${trial.n}, slope: ${trial.slope}`);
             }
             
-            // Randomize all trials
-            for (let i = trials.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [trials[i], trials[j]] = [trials[j], trials[i]];
-            }
-        }
-        
-        // Display a trial
-        function presentTrial(trial) {
-            // Clear canvas
-            ctx.fillStyle = '#1a1a1a';
-            ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+            // Store current trial for handleResponse
+            window.currentTrial = trial;
             
-            // Draw axes
-            drawAxes(ctx);
+            const img = document.getElementById('stimulusImage');
+            img.src = `stimuli/${trial.path}`;
             
-            // Generate stimulus
-            let stimulus;
-            if (trial.isProbe && trial.probeParams) {
-                // Probe trial: use swapped parameters
-                stimulus = generateStimulus(trial.stimulusType, trial.probeParams.slope, trial.probeParams.n);
+            // Hide feedback square
+            document.getElementById('feedbackSquare').style.display = 'none';
+            
+            // Show stimulus image
+            img.style.display = 'block';
+            
+            // Show debug info
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.textContent = `${trial.stimulus_name} | n: ${trial.n} | slope: ${trial.slope.toFixed(3)}`;
+            debugInfo.style.display = 'block';
+            
+            // Show explanation text if this is an explanation trial
+            if (trial.isExplanation) {
+                const textOverlay = document.getElementById('textOverlay');
+                textOverlay.textContent = `This array goes into category ${trial.category}. Press the ${trial.correctKey} key.`;
+                textOverlay.style.display = 'block';
             } else {
-                // Regular trial: use normal generation
-                stimulus = generateStimulus(trial.stimulusType);
+                document.getElementById('textOverlay').style.display = 'none';
             }
             
-            drawScatterplot(ctx, stimulus.data);
-            
-            // Draw explanation text if this is an explanation trial
-            if (trial.trialType === 'explanation' && trial.explanationText) {
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 24px Arial';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'top';
-                
-                // Draw text near the top of the canvas (not the very top, but up there)
-                const textX = CANVAS_SIZE / 2;
-                const textY = 80; // Position near the top
-                
-                // Draw text with outline for better visibility
-                ctx.strokeStyle = '#000000';
-                ctx.lineWidth = 4;
-                ctx.strokeText(trial.explanationText, textX, textY);
-                ctx.fillText(trial.explanationText, textX, textY);
-            }
-            
-            // Store stimulus data for recording
-            currentTrialStimulusData = {
-                stimulusType: trial.stimulusType,
-                isProbe: trial.isProbe || false,
-                probeType: trial.probeType || null,
-                stim: {
-                    slope: stimulus.slope,
-                    n: stimulus.n,
-                    rSquared: stimulus.rSquared
-                }
-            };
-            
-            // Reset response tracking
-            responseReceived = false;
-            isWaitingForResponse = true;
+            // Set trial start time immediately, then update when image loads
             trialStartTime = Date.now();
             
-            // Set timeout for 3000ms (or longer for explanation trials)
-            const timeoutDuration = trial.trialType === 'explanation' ? 10000 : 3000;
-            trialTimeout = setTimeout(() => {
-                if (!responseReceived) {
-                    handleTrialResponse(null);
-                }
-            }, timeoutDuration);
-        }
-        
-        // Handle response to a trial
-        function handleTrialResponse(responseKey) {
-            if (!isWaitingForResponse) return;
-            
-            responseReceived = true;
-            isWaitingForResponse = false;
-            
-            if (trialTimeout) {
-                clearTimeout(trialTimeout);
-                trialTimeout = null;
-            }
-            
-            const trial = isInExplanationPhase ? explanationTrials[currentTrialIndex] : 
-                          (isInTrainingPhase ? trainingTrials[currentTrialIndex] : trials[currentTrialIndex]);
-            const reactionTime = Date.now() - trialStartTime;
-            
-            // Determine correctness: L = Stimulus A, A = Stimulus B
-            let correct = false;
-            if (trial.isProbe) {
-                // Probe trials always marked as correct
-                correct = true;
-            } else {
-                // Check if response matches correct response
-                if (responseKey === trial.correctResponse) {
-                    correct = true;
-                } else if (responseKey === null) {
-                    correct = false;
-                }
-            }
-            
-            // Track training trial results (but not explanation trials)
-            if (isInTrainingPhase && !isInExplanationPhase) {
-                trainingTrialResults.push(correct);
-                
-                // Track only non-probe training trials for failure check
-                if (!trial.isProbe) {
-                    trainingTrialResultsNonProbe.push(correct);
-                    
-                    // Check if 2 out of any 4 consecutive non-probe training trials are wrong
-                    if (trainingTrialResultsNonProbe.length >= 4) {
-                        const last4 = trainingTrialResultsNonProbe.slice(-4);
-                        const wrongCount = last4.filter(r => r === false).length;
-                        
-                        if (wrongCount >= 2) {
-                            needsRemedialExplanation = true;
-                            trainingResumeIndex = currentTrialIndex + 1; // Resume after current trial
-                        }
-                    }
-                }
-            } else if (!isInTrainingPhase && !isInExplanationPhase) {
-                // Track only non-probe regular trials for failure check
-                if (!trial.isProbe) {
-                    regularTrialResultsNonProbe.push(correct);
-                    
-                    // Check if 2 out of any 4 consecutive non-probe regular trials are wrong
-                    if (regularTrialResultsNonProbe.length >= 4) {
-                        const last4 = regularTrialResultsNonProbe.slice(-4);
-                        const wrongCount = last4.filter(r => r === false).length;
-                        
-                        if (wrongCount >= 2) {
-                            needsRemedialExplanation = true;
-                            regularResumeIndex = currentTrialIndex + 1; // Resume after current trial
-                        }
-                    }
-                }
-            }
-            
-            globalTrialNumber++;
-            
-            const trialType = isInExplanationPhase ? 'explanation' : 
-                             (isInTrainingPhase ? 'training' : (trial.trialType || 'regular'));
-            
-            // Record trial data
-            const recordedTrialData = {
-                trialNumber: globalTrialNumber,
-                accuracy: correct,
-                reactionTime: reactionTime,
-                responseKey: responseKey, // STIMULUS_A_KEY (Stim A), STIMULUS_B_KEY (Stim B), or null
-                stimulusType: trial.stimulusType,
-                noise: SIGMA,
-                bigBlock: currentBigBlockIndex + 1,
-                trialType: trialType,
-                isProbe: trial.isProbe || false,
-                probeType: trial.probeType || null,
-                showAxes: SHOW_AXES,
-                stimSlope: currentTrialStimulusData ? currentTrialStimulusData.stim.slope : null,
-                stimN: currentTrialStimulusData ? currentTrialStimulusData.stim.n : null,
-                stimRSquared: currentTrialStimulusData ? currentTrialStimulusData.stim.rSquared : null
+            img.onload = () => {
+                // Image loaded - stimulus onset, record start time
+                trialStartTime = Date.now();
             };
             
-            trialData.push(recordedTrialData);
-            console.log('Trial data:', recordedTrialData);
-            
-            // Show feedback (or white screen for probe trials)
-            if (trial.isProbe) {
-                showWhiteScreen();
-            } else {
-                showFeedback(correct);
+            // If image is already cached, onload might not fire, so set a fallback
+            if (img.complete) {
+                trialStartTime = Date.now();
             }
         }
         
-        // Show feedback as a small square on a blank intertrial screen
-        function showFeedback(correct) {
-            // Clear canvas to blank background (intertrial interval)
-            ctx.fillStyle = '#1a1a1a';
-            ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-            
-            // Draw a small square in the center of the canvas
-            const squareSize = 60;
-            const centerX = CANVAS_SIZE / 2;
-            const centerY = CANVAS_SIZE / 2;
-            const squareX = centerX - squareSize / 2;
-            const squareY = centerY - squareSize / 2;
-            
-            // Set color based on correctness
-            ctx.fillStyle = correct ? '#00ff00' : '#ff0000';
-            ctx.fillRect(squareX, squareY, squareSize, squareSize);
-            
-            // Draw border for visibility
-            ctx.strokeStyle = '#000000';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(squareX, squareY, squareSize, squareSize);
-            
-            setTimeout(() => {
-                nextTrial();
-            }, 500);
+        function showBreak() {
+            currentPhase = 'break';
+            document.getElementById('stimulusImage').style.display = 'none';
+            document.getElementById('textOverlay').style.display = 'none';
+            document.getElementById('breakScreen').style.display = 'block';
         }
         
-        // Show blank intertrial screen (for probe trials - no feedback square)
-        function showWhiteScreen() {
-            // Clear canvas to blank background (intertrial interval)
-            ctx.fillStyle = '#1a1a1a';
-            ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-            
-            // No square for probe trials, just blank background
-            
-            setTimeout(() => {
-                nextTrial();
-            }, 500);
+        function continueAfterBreak() {
+            currentPhase = 'main';
+            // currentTrialIndex is already at breakAfterTrial, continue from there
+            document.getElementById('breakScreen').style.display = 'none';
+            document.getElementById('stimulusImage').style.display = 'block';
+            presentTrial();
         }
         
-        // Move to next trial or end block
-        function nextTrial() {
-            if (isInExplanationPhase) {
-                currentTrialIndex++;
-                
-                if (currentTrialIndex < explanationTrials.length) {
-                    presentTrial(explanationTrials[currentTrialIndex]);
-                } else {
-                    // Explanation trials complete
-                    isInExplanationPhase = false;
-                    
-                    // Check if this was initial explanation or remedial explanation
-                    if (trainingResumeIndex > 0) {
-                        // Remedial explanation: resume training from where we left off
-                        isInTrainingPhase = true;
-                        currentTrialIndex = trainingResumeIndex - 1; // Will be incremented to trainingResumeIndex
-                        trainingResumeIndex = 0; // Reset
-                        trainingTrialResultsNonProbe = []; // Reset non-probe tracking
-                        nextTrial(); // Continue to next training trial
-                    } else if (regularResumeIndex > 0) {
-                        // Remedial explanation: resume regular trials from where we left off
-                        isInTrainingPhase = false;
-                        currentTrialIndex = regularResumeIndex - 1; // Will be incremented to regularResumeIndex
-                        regularResumeIndex = 0; // Reset
-                        regularTrialResultsNonProbe = []; // Reset non-probe tracking
-                        nextTrial(); // Continue to next regular trial
-                    } else {
-                        // Initial explanation: move to training
-                        isInTrainingPhase = true;
-                        currentTrialIndex = 0;
-                        trainingTrialResults = []; // Reset training results
-                        trainingTrialResultsNonProbe = []; // Reset non-probe tracking
-                        
-                        if (trainingTrials.length > 0) {
-                            presentTrial(trainingTrials[0]);
-                        } else {
-                            alert('Error: No training trials generated');
-                            showInstructionScreen('Error: No training trials generated. Please refresh.');
-                        }
-                    }
-                }
-            } else if (isInTrainingPhase) {
-                // Check if we need to insert remedial explanation trials
-                if (needsRemedialExplanation) {
-                    needsRemedialExplanation = false;
-                    isInExplanationPhase = true;
-                    explanationTrials = generateExplanationTrials(true); // Pass true for remedial
-                    currentTrialIndex = 0;
-                    presentTrial(explanationTrials[0]);
-                    return;
-                }
-                
-                currentTrialIndex++;
-                
-                if (currentTrialIndex < trainingTrials.length) {
-                    presentTrial(trainingTrials[currentTrialIndex]);
-                } else {
-                    // Check training criterion: at least 60% accuracy on last 15 trials
-                    const last15Trials = trainingTrialResults.slice(-15); // Get last 15 trials
-                    const totalTrainingTrials = last15Trials.length;
-                    const correctTrainingTrials = last15Trials.filter(r => r === true).length;
-                    const accuracy = totalTrainingTrials > 0 ? correctTrainingTrials / totalTrainingTrials : 0;
-                    
-                    console.log(`Training accuracy (last 15 trials): ${(accuracy * 100).toFixed(1)}% (${correctTrainingTrials}/${totalTrainingTrials})`);
-                    
-                    if (accuracy >= 0.6) {
-                        console.log('Training criterion met! Moving to regular trials.');
-                        isInTrainingPhase = false;
-                        currentTrialIndex = 0;
-                        regularTrialResultsNonProbe = []; // Reset regular trial tracking
-                        
-                        if (trials.length > 0) {
-                            presentTrial(trials[0]);
-                        } else {
-                            alert('Error: No regular trials generated');
-                            showInstructionScreen('Error: No regular trials generated. Please refresh.');
-                        }
-                    } else {
-                        console.log('Training criterion not met. Adding more training trials.');
-                        const additionalTrials = generateTrainingTrials(20);
-                        trainingTrials = trainingTrials.concat(additionalTrials);
-                        presentTrial(trainingTrials[currentTrialIndex]);
-                    }
-                }
-            } else {
-                // Check if we need to insert remedial explanation trials (for regular trials)
-                if (needsRemedialExplanation) {
-                    needsRemedialExplanation = false;
-                    isInExplanationPhase = true;
-                    explanationTrials = generateExplanationTrials(true); // Pass true for remedial
-                    currentTrialIndex = 0;
-                    presentTrial(explanationTrials[0]);
-                    return;
-                }
-                
-                currentTrialIndex++;
-                
-                if (currentTrialIndex < trials.length) {
-                    presentTrial(trials[currentTrialIndex]);
-                } else {
-                    // Block complete
-                    console.log('Block complete!');
-                    currentBigBlockIndex++;
-                    
-                    if (currentBigBlockIndex >= BIG_BLOCKS.length) {
-                        // All big blocks complete
-                        exportTrialData();
-                        showInstructionScreen('Thank you');
-                    } else {
-                        // Start next big block
-                        startNextBigBlock();
-                    }
-                }
-            }
+        function showCompletion() {
+            document.getElementById('stimulusImage').style.display = 'none';
+            document.getElementById('textOverlay').style.display = 'none';
+            document.getElementById('instructions').style.display = 'block';
+            document.getElementById('instructionText').innerHTML = '<h2>Task Complete!</h2><p>Thank you for participating.</p>';
         }
         
-        // Export trial data to CSV
-        function exportTrialData() {
-            console.log('All trial data:', trialData);
-            
-            if (trialData.length === 0) {
-                console.log('No trial data to export');
+        // Keyboard input
+        document.addEventListener('keydown', (e) => {
+            if (currentPhase === 'break') {
+                continueAfterBreak();
                 return;
             }
             
-            const headers = ['participantId', 'sonaId', 'qualtricsResponseId', 'trialNumber', 'accuracy', 'reactionTime', 'responseKey', 'stimulusType', 'noise', 'bigBlock', 'trialType', 'isProbe', 'probeType', 'showAxes', 'stimSlope', 'stimN', 'stimRSquared'];
-            let csv = headers.join(',') + '\n';
-            
-            trialData.forEach(trial => {
-                const row = [
-                    participantIdFromUrl || '',
-                    sonaId || '',
-                    qualtricsResponseId || '',
-                    trial.trialNumber,
-                    trial.accuracy,
-                    trial.reactionTime,
-                    trial.responseKey !== null ? trial.responseKey : '',
-                    trial.stimulusType,
-                    trial.noise,
-                    trial.bigBlock,
-                    trial.trialType || 'regular',
-                    trial.isProbe ? 'true' : 'false',
-                    trial.probeType !== null ? trial.probeType : '',
-                    trial.showAxes ? 'true' : 'false',
-                    trial.stimSlope !== null ? trial.stimSlope.toFixed(6) : '',
-                    trial.stimN !== null ? trial.stimN : '',
-                    trial.stimRSquared !== null ? trial.stimRSquared.toFixed(6) : ''
-                ];
-                csv += row.join(',') + '\n';
-            });
-            
-            // Generate unique filename
-            const filename = `categorization_data_${Date.now()}.csv`;
-            
-            // Send data to OSF
-            fetch("https://pipe.jspsych.org/api/data/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "*/*",
-                },
-                body: JSON.stringify({
-                    experimentID: "1IQX1jXTAEW6",
-                    filename: filename,
-                    data: csv,
-                }),
-            })
-            .then(response => {
-                if (response.ok) {
-                    console.log('Data successfully sent to OSF');
-                } else {
-                    console.error('Failed to send data to OSF:', response.status, response.statusText);
-                }
-                // Send message to Qualtrics that task is complete
-                finishAndReturn();
-            })
-            .catch(error => {
-                console.error('Error sending data to OSF:', error);
-                // Still send message even if OSF upload fails
-                finishAndReturn();
-            });
-        }
-        
-        // Send message to Qualtrics and close window (matching reference file approach)
-        function finishAndReturn() {
-            // Be defensive: send the message a couple times before closing
-            function sendDone() {
-                try {
-                    if (window.opener && !window.opener.closed) {
-                        // Send as JSON string
-                        window.opener.postMessage('{"type":"TASK_DONE"}', QUALTRICS_ORIGIN);
-                        // Also send as object (some setups prefer this)
-                        window.opener.postMessage({ type: 'TASK_DONE' }, QUALTRICS_ORIGIN);
-                        return true;
-                    }
-                } catch (e) { 
-                    console.log('Error sending to opener:', e);
-                }
-                return false;
-            }
-
-            var sent = sendDone();
-            setTimeout(sendDone, 75);   // small retries help with timing
-            setTimeout(sendDone, 200);
-
-            // Give the message a moment to land, then try to close
-            setTimeout(function () {
-                window.close();
-                // If close is blocked, show fallback instruction
-                setTimeout(function () {
-                    // Update the instruction screen if window doesn't close
-                    const instructionScreen = document.getElementById('instructionScreen');
-                    const instructionText = document.getElementById('instructionText');
-                    if (instructionText) {
-                        instructionText.textContent = 'Task complete ✅\n\nPlease return to your Qualtrics tab to continue.';
-                    }
-                }, 150);
-            }, 150);
-        }
-        
-        // Start next big block
-        function startNextBigBlock() {
-            SIGMA = BIG_BLOCKS[currentBigBlockIndex].sigma;
-            
-            const blockInfo = `Big Block ${currentBigBlockIndex + 1} of ${BIG_BLOCKS.length}\nNoise: ${SIGMA.toFixed(3)}`;
-            const instructionText = 'Use the directions and feedback to respond with the A and L keys. A Green square indicates you selected correctly; a red square indicates you selected incorrectly. On some trials, you will not receive feedback. This is normal. Please keep responding based on what rule you remember.';
-            showInstructionScreen(instructionText, blockInfo);
-        }
-        
-        // Show instruction screen
-        function showInstructionScreen(instructionText = 'Instructions will appear here', blockInfo = '') {
-            const instructionScreen = document.getElementById('instructionScreen');
-            const instructionTextEl = document.getElementById('instructionText');
-            const blockInfoEl = document.getElementById('blockInfo');
-            instructionTextEl.textContent = instructionText;
-            blockInfoEl.textContent = blockInfo;
-            instructionScreen.classList.remove('hidden');
-            
-            currentTrialIndex = 0;
-        }
-        
-        // Start block (called from start button)
-        function startBlock() {
-            const instructionScreen = document.getElementById('instructionScreen');
-            instructionScreen.classList.add('hidden');
-            
-            // Initialize explanation phase first
-            isInExplanationPhase = true;
-            isInTrainingPhase = false;
-            explanationTrials = [];
-            trainingTrials = [];
-            trainingTrialResults = [];
-            trainingTrialResultsNonProbe = [];
-            regularTrialResultsNonProbe = [];
-            needsRemedialExplanation = false;
-            trainingResumeIndex = 0;
-            regularResumeIndex = 0;
-            currentTrialIndex = 0;
-            
-            // Generate regular trials
-            if (trials.length === 0) {
-                generateTrials();
+            if (currentPhase === 'instructions') {
+                return;
             }
             
-            // Generate explanation trials (2 trials: one A, one B)
-            explanationTrials = generateExplanationTrials();
+            // Don't process key presses during intertrial interval
+            if (isIntertrialInterval) {
+                return;
+            }
             
-            // Generate initial 20 training trials
-            trainingTrials = generateTrainingTrials(20);
-            
-            // Show intertrial interval (blank dark screen) before first trial
-            ctx.fillStyle = '#1a1a1a';
-            ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-            
-            setTimeout(() => {
-                if (explanationTrials.length > 0) {
-                    presentTrial(explanationTrials[0]);
-                } else {
-                    alert('Error: No explanation trials generated');
-                    showInstructionScreen('Error: No explanation trials generated. Please refresh.');
-                }
-            }, 500);
-        }
-        
-        // Keyboard event handler - uses STIMULUS_A_KEY and STIMULUS_B_KEY constants
-        document.addEventListener('keydown', function(event) {
-            if (isWaitingForResponse) {
-                const keyCodeA = 'Key' + STIMULUS_A_KEY;
-                const keyCodeB = 'Key' + STIMULUS_B_KEY;
-                
-                if (event.code === keyCodeA) {
-                    event.preventDefault();
-                    handleTrialResponse(STIMULUS_A_KEY);
-                } else if (event.code === keyCodeB) {
-                    event.preventDefault();
-                    handleTrialResponse(STIMULUS_B_KEY);
-                }
+            const key = e.key.toUpperCase();
+            if (key === 'A' || key === 'L') {
+                // Handle response
+                handleResponse(key);
             }
         });
         
-        // Start button handler
-        document.getElementById('startButton').addEventListener('click', startBlock);
+        function showFeedback(correct) {
+            const feedbackSquare = document.getElementById('feedbackSquare');
+            feedbackSquare.className = correct ? 'correct' : 'incorrect';
+            feedbackSquare.style.display = 'block';
+        }
         
-        // Initialize - start first big block
-        currentBigBlockIndex = 0;
-        startNextBigBlock();
+        function hideFeedback() {
+            document.getElementById('feedbackSquare').style.display = 'none';
+        }
+        
+        function recordTrialData(trial, responseKey, correct, reactionTime) {
+            globalTrialNumber++;
+            
+            const trialDataEntry = {
+                trialNumber: globalTrialNumber,
+                block: currentBlock + 1,
+                blockName: BLOCKS[currentBlock].name,
+                phase: currentPhase,
+                trialIndex: currentTrialIndex,
+                stimulusIndex: trial.index,
+                stimulusName: trial.stimulus_name,
+                stimulusPath: trial.path,
+                pairIdx: trial.pair_idx,
+                slope: trial.slope,
+                n: trial.n,
+                sigma: trial.sigma,
+                responseKey: responseKey,
+                correctKey: getCorrectKey(trial.stimulus_name),
+                accuracy: correct,
+                reactionTime: reactionTime,
+                isExplanation: trial.isExplanation || false,
+                participantCondition: participantCondition
+            };
+            
+            trialData.push(trialDataEntry);
+            console.log('Trial data:', trialDataEntry);
+        }
+        
+        function handleResponse(key) {
+            console.log('handleResponse called:', key, 'currentPhase:', currentPhase);
+            
+            if (currentPhase !== 'training' && currentPhase !== 'main') {
+                console.log('Not in training or main phase, returning');
+                return;
+            }
+            
+            // Calculate reaction time
+            if (trialStartTime === 0) {
+                console.warn('trialStartTime is 0, setting it now');
+                trialStartTime = Date.now();
+            }
+            const reactionTime = Date.now() - trialStartTime;
+            
+            let trial;
+            if (currentPhase === 'training') {
+                // Get trial based on whether we're in initial 32 or extended training
+                if (initialTrainingComplete) {
+                    // Use shuffled extended pool
+                    if (extendedTrialIndex >= trainingTrialsExtended.length) {
+                        console.log('Reshuffling extended pool in handleResponse');
+                        trainingTrialsExtended = shuffleArray([...trainingTrialsPool]);
+                        extendedTrialIndex = 0;
+                    }
+                    trial = trainingTrialsExtended[extendedTrialIndex];
+                    console.log(`handleResponse - Extended: index ${extendedTrialIndex}, stimulus: ${trial.stimulus_name}`);
+                } else {
+                    trial = trainingTrials[currentTrialIndex];
+                    console.log(`handleResponse - Initial: index ${currentTrialIndex}, stimulus: ${trial.stimulus_name}`);
+                }
+            } else {
+                // Use the trial that was selected in presentTrial
+                trial = window.currentTrial;
+                if (!trial) {
+                    console.error('No current trial found!');
+                    return;
+                }
+                console.log(`handleResponse - Main: remaining ${mainTrialsPool.length} in pool, stimulus: ${trial.stimulus_name}`);
+            }
+            
+            const correctKey = getCorrectKey(trial.stimulus_name);
+            const correct = key === correctKey;
+            
+            // Record trial data
+            recordTrialData(trial, key, correct, reactionTime);
+            
+            // Show feedback for all trials
+            showFeedback(correct);
+            
+            // Hide stimulus and all text during intertrial interval
+            document.getElementById('stimulusImage').style.display = 'none';
+            document.getElementById('debugInfo').style.display = 'none';
+            document.getElementById('textOverlay').style.display = 'none'; // Hide explanation text
+            isIntertrialInterval = true;
+            
+            // Set feedback duration based on correctness
+            const feedbackDuration = correct ? 400 : 600;
+            
+            // Track training responses
+            if (currentPhase === 'training') {
+                trainingResponses.push(correct);
+                
+                // Increment trial index for next trial (unless we're in extended training)
+                if (!initialTrainingComplete) {
+                    currentTrialIndex++;
+                } else {
+                    // Increment extended training index
+                    extendedTrialIndex++;
+                }
+                
+                // Check training criterion after initial 16 trials
+                if (!initialTrainingComplete && currentTrialIndex >= 16) {
+                    console.log(`Initial 16 trials complete. Current index: ${currentTrialIndex}, Responses: ${trainingResponses.length}`);
+                    initialTrainingComplete = true;
+                    currentTrialIndex = 0; // Reset index for extended training
+                    extendedTrialIndex = 0; // Reset extended training index
+                    
+                    // Check last 10 trials accuracy (since we only have 16, check last 10)
+                    const last10 = trainingResponses.slice(-10);
+                    const accuracy10 = last10.filter(r => r).length / last10.length;
+                    
+                    console.log(`Initial 16 trials complete. Last 10 accuracy: ${(accuracy10 * 100).toFixed(1)}%`);
+                    console.log(`Extended pool size: ${trainingTrialsExtended.length}, Pool types:`, 
+                        trainingTrialsExtended.map(t => t.stimulus_name).slice(0, 10));
+                    
+                    if (accuracy10 >= 0.8) {
+                        console.log(`Training criterion met! Last 10 accuracy: ${(accuracy10 * 100).toFixed(1)}%`);
+                        console.log(`Moving to main trials. Main trials count: ${mainTrialsPool.length}`);
+                        // Move to main trials
+                        currentPhase = 'main';
+                        currentTrialIndex = 0;
+                        setTimeout(() => {
+                            isIntertrialInterval = false;
+                            hideFeedback();
+                            presentTrial();
+                        }, feedbackDuration);
+                        return;
+                    }
+                    // Continue extended training
+                    setTimeout(() => {
+                        isIntertrialInterval = false;
+                        hideFeedback();
+                        presentTrial();
+                    }, feedbackDuration);
+                    return;
+                }
+                
+                // Check criterion during extended training (check last 10 trials)
+                if (initialTrainingComplete && trainingResponses.length >= 10) {
+                    const last10 = trainingResponses.slice(-10);
+                    const accuracy10 = last10.filter(r => r).length / last10.length;
+                    
+                    if (accuracy10 >= 0.8) {
+                        console.log(`Training criterion met! Last 10 accuracy: ${(accuracy10 * 100).toFixed(1)}%`);
+                        // Move to main trials
+                        currentPhase = 'main';
+                        currentTrialIndex = 0;
+                        setTimeout(() => {
+                            isIntertrialInterval = false;
+                            hideFeedback();
+                            presentTrial();
+                        }, feedbackDuration);
+                        return;
+                    }
+                }
+                
+                // Continue training
+                setTimeout(() => {
+                    isIntertrialInterval = false;
+                    hideFeedback();
+                    presentTrial();
+                }, feedbackDuration);
+                return;
+            }
+            
+            // Main phase response handling
+            // Track how many main trials we've completed
+            if (currentPhase === 'main') {
+                currentTrialIndex++;
+                console.log(`Response: ${key}, Correct: ${correct}, Main trial #${currentTrialIndex}, Stimulus: ${trial.stimulus_name}, Remaining: ${mainTrialsPool.length}`);
+                
+                // Check if we need to show break in main phase (after completing 232 trials)
+                if (currentTrialIndex === breakAfterTrial) {
+                    isIntertrialInterval = false;
+                    hideFeedback();
+                    showBreak();
+                    return;
+                }
+            }
+            
+            setTimeout(() => {
+                isIntertrialInterval = false;
+                hideFeedback();
+                presentTrial();
+            }, feedbackDuration);
+        }
+        
+        // Start button
+        document.getElementById('startButton').addEventListener('click', () => {
+            startBlock();
+        });
+        
+        // Initialize
+        loadManifest();
     </script>
 </body>
 </html>
-
