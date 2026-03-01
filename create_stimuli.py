@@ -2,10 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import csv
+import math
 from pathlib import Path
 
 # Parameters matching your HTML file
 CANVAS_SIZE = 700
+DPI = 100
 MARGIN = 20
 PLOT_SIZE = CANVAS_SIZE - 2 * MARGIN
 DOT_RADIUS = 20
@@ -13,6 +15,9 @@ X_MIN = -0.1
 X_MAX = 1.1
 Y_MIN = -0.1
 Y_MAX = 1.1
+
+# Dot size in pixels (diameter) at canvas DPI: matplotlib s is area in points², 1 pt = 1/72 inch
+DOT_DIAMETER_PX = round(2 * math.sqrt((DOT_RADIUS * 2) / math.pi) * (DPI / 72))
 
 # Fully crossed design: 8 slopes × 8 n values
 SLOPES = [-0.375, -0.3, -0.225, -0.075, 0.075, 0.225, 0.3, 0.375]
@@ -136,6 +141,7 @@ def main(no_neutral=False, neutral_only=False):
                         'version': version,
                         'trend_category': trend_category,
                         'size_category': size_category,
+                        'dot_size_px': DOT_DIAMETER_PX,
                         'x_values': ','.join([f'{x:.6f}' for x in x_values]),
                         'y_values': ','.join([f'{y:.6f}' for y in y_values])
                     })
@@ -198,6 +204,7 @@ def main(no_neutral=False, neutral_only=False):
             'observed_slope': round(observed_slope, 6),
             'n': 15,
             'sigma': sigma,
+            'dot_size_px': DOT_DIAMETER_PX,
             'x_values': ','.join([f'{x:.6f}' for x in x_norm]),
             'y_values': ','.join([f'{y:.6f}' for y in y_norm])
         })
