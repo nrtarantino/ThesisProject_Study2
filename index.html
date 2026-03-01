@@ -291,7 +291,7 @@
             presentTrial();
         }
         
-        function presentTrial() {
+        function presentTrial(itiDelayMs) {
             if (trialsPool.length === 0) {
                 currentBlock++;
                 if (currentBlock >= BLOCKS.length) {
@@ -310,14 +310,32 @@
             
             window.currentTrial = trial;
             
+            // Start loading immediately (during ITI)
             document.getElementById('topImage').src = NEUTRAL_PATH;
             document.getElementById('bottomImage').src = `stimuli/${trial.path}`;
-            const stimImg = document.getElementById('bottomImage');
-            document.getElementById('trialDisplay').style.display = 'block';
+            const topImg = document.getElementById('topImage');
+            const bottomImg = document.getElementById('bottomImage');
             
-            trialStartTime = Date.now();
-            stimImg.onload = () => { trialStartTime = Date.now(); };
-            if (stimImg.complete) { trialStartTime = Date.now(); }
+            let topReady = false, bottomReady = false;
+            let minDelayElapsed = !itiDelayMs || itiDelayMs <= 0;
+            function showWhenReady() {
+                if (topReady && bottomReady && minDelayElapsed) {
+                    document.getElementById('trialDisplay').style.display = 'block';
+                    trialStartTime = Date.now();
+                    isIntertrialInterval = false;
+                }
+            }
+            topImg.onload = () => { topReady = true; showWhenReady(); };
+            bottomImg.onload = () => { bottomReady = true; showWhenReady(); };
+            if (topImg.complete) { topReady = true; showWhenReady(); }
+            if (bottomImg.complete) { bottomReady = true; showWhenReady(); }
+            
+            if (itiDelayMs && itiDelayMs > 0) {
+                setTimeout(() => {
+                    minDelayElapsed = true;
+                    showWhenReady();
+                }, itiDelayMs);
+            }
         }
         
         function showBreak() {
@@ -467,10 +485,7 @@
                 return;
             }
             
-            setTimeout(() => {
-                isIntertrialInterval = false;
-                presentTrial();
-            }, 500);
+            presentTrial(500);
         }
         
         document.getElementById('startButton').addEventListener('click', () => {
