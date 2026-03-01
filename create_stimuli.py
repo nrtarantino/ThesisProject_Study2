@@ -140,28 +140,6 @@ def main():
                 if global_index % 20 == 0:
                     print(f"Progress: {global_index}/{total} stimuli generated...")
     
-    # Generate 5 neutral stimuli: 15 dots, 0 slope
-    for v in range(20):
-        filepath, filename, x_values, y_values = generate_and_save_stimulus(
-            "stim",
-            {'index': global_index, 'slope': 0, 'n': 15, 'sigma': sigma},
-            base_dir
-        )
-        manifest.append({
-            'index': global_index,
-            'filename': filename,
-            'path': filename,
-            'slope': 0,
-            'n': 15,
-            'sigma': sigma,
-            'version': v,
-            'trend_category': 'Neutral',
-            'size_category': 'Neutral',
-            'x_values': ','.join([f'{x:.6f}' for x in x_values]),
-            'y_values': ','.join([f'{y:.6f}' for y in y_values])
-        })
-        global_index += 1
-    
     manifest_path = base_dir / 'manifest.csv'
     with open(manifest_path, 'w', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=manifest[0].keys())
