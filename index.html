@@ -242,30 +242,20 @@
             return block.categoryField === 'trend_category' ? 'Trend Judgement Task' : 'Numerosity Task';
         }
         
-        function getBlockInstructionParts() {
+        function getBlockInstructions(justAsBefore) {
             const block = BLOCKS[currentBlock];
             const cond = participantCondition === 1 ? 'condition1' : 'condition2';
             if (block.categoryField === 'trend_category') {
                 const increasingKey = KEY_MAPPING[cond]['Trend_Up'];
                 const decreasingKey = KEY_MAPPING[cond]['Trend_Down'];
-                return {
-                    first: `Use the A and L keys to indicate whether the trend of the dot array on the bottom is increasing or decreasing compared to the trend of the dot array on the top.`,
-                    rest: `If the dot array on the bottom is increasing compared to the array on the top press the ${increasingKey} key. If the dot array on the bottom is decreasing compared to the array on the top press the ${decreasingKey} key.`
-                };
+                const rest = `If the dot array on the bottom is increasing compared to the array on the top press the ${increasingKey} key. If the dot array on the bottom is decreasing compared to the array on the top press the ${decreasingKey} key.`;
+                return justAsBefore ? `Just as in the part before, ${rest.charAt(0).toLowerCase()}${rest.slice(1)}` : rest;
             } else {
                 const moreKey = KEY_MAPPING[cond]['Big'];
                 const fewerKey = KEY_MAPPING[cond]['Small'];
-                return {
-                    first: `Use the A and L keys to indicate whether the dot array on the bottom has more or fewer dots than the array on the top.`,
-                    rest: `If the dot array on the bottom has more dots than the array on the top press the ${moreKey} key. If the dot array on the bottom has fewer dots than the array on the top press the ${fewerKey} key.`
-                };
+                const rest = `If the dot array on the bottom has more dots than the array on the top press the ${moreKey} key. If the dot array on the bottom has fewer dots than the array on the top press the ${fewerKey} key.`;
+                return justAsBefore ? `Just as in the part before, ${rest.charAt(0).toLowerCase()}${rest.slice(1)}` : rest;
             }
-        }
-        
-        function getBlockInstructions(skipFirstSentence, justAsBefore) {
-            const { first, rest } = getBlockInstructionParts();
-            if (justAsBefore) return `Just as in the part before, ${rest.charAt(0).toLowerCase()}${rest.slice(1)}`;
-            return skipFirstSentence ? rest : first + ' ' + rest;
         }
         
         function showReminder() {
@@ -274,7 +264,7 @@
             document.getElementById('neutralDisplay').style.display = 'none';
             document.getElementById('instructionText').innerHTML = `
                 <p>Remember</p>
-                <p>${getBlockInstructions(true)}</p>
+                <p>${getBlockInstructions(false)}</p>
             `;
             document.getElementById('instructions').style.display = 'block';
             document.getElementById('startButton').style.display = 'block';
@@ -286,14 +276,11 @@
             const taskNum = Math.ceil(currentPart / 2);
             const partNum = ((currentPart - 1) % 2) + 1;
             const isPart2 = (currentPart === 2 || currentPart === 4);
-            const { first, rest } = getBlockInstructionParts();
-            const instrHtml = isPart2
-                ? `<p>${getBlockInstructions(false, true)}</p>`
-                : `<p>${first}</p><p>${rest}</p>`;
+            const instrText = getBlockInstructions(isPart2);
             document.getElementById('instructionText').innerHTML = `
                 <p class="taskName"><strong>${getTaskName()}</strong></p>
                 <p>Task ${taskNum} of 2, Part ${partNum} of 2</p>
-                ${instrHtml}
+                <p>${instrText}</p>
             `;
             document.getElementById('instructions').style.display = 'block';
             document.getElementById('startButton').style.display = 'block';
