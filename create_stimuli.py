@@ -14,46 +14,10 @@ X_MAX = 1.3
 Y_MIN = -0.3
 Y_MAX = 1.3
 
-# Stimulus definitions (matching your HTML)
-STIMULUS_TREND_DOWN = {
-    'name': 'Trend_Down',
-    'pairs': [
-        {'slope': -0.375, 'n': 15 },
-        {'slope': -0.3, 'n': 15 },
-        {'slope': -0.225, 'n': 15},
-        {'slope': -0.075, 'n': 15 }
-    ]
-}
-
-STIMULUS_TREND_UP = {
-    'name': 'Trend_Up',
-    'pairs': [
-        {'slope': 0.375, 'n': 15},
-        {'slope': 0.3, 'n': 15},
-        {'slope': 0.225, 'n': 15},
-        {'slope': 0.075, 'n': 15}
-    ]
-}
-
-STIMULUS_SMALL = {
-    'name': 'Small',
-    'pairs': [
-        {'slope': 0, 'n': 8 },
-        {'slope': 0, 'n': 10 },
-        {'slope': 0, 'n': 12 },
-        {'slope': 0, 'n': 14 }
-    ]
-}
-
-STIMULUS_BIG = {
-    'name': 'Big',
-    'pairs': [
-        {'slope': 0, 'n': 22},
-        {'slope': 0, 'n': 20},
-        {'slope': 0, 'n': 18},
-        {'slope': 0, 'n': 16}
-    ]
-}
+# Fully crossed design: 8 slopes × 8 n values
+SLOPES = [-0.375, -0.3, -0.225, -0.075, 0.075, 0.225, 0.3, 0.375]
+N_VALUES = [8, 10, 12, 14, 16, 18, 20, 22]
+VERSIONS_PER_COMBO = 8
 
 def random_normal(mean=0, std_dev=1):
     """Box-Muller transform for normal distribution"""
@@ -132,89 +96,134 @@ def generate_and_save_stimulus(stimulus_name, index, output_dir):
     return filepath, filename, x_norm, y_norm
 
 def main():
-    # Create output directories
     base_dir = Path('stimuli')
     base_dir.mkdir(exist_ok=True)
     
-    # Noise levels to generate (matching your blocks)
-    noise_levels = [0.2]  # Add more if you have multiple blocks with different noise
-    
-    # Generate exactly 32 versions of each slope/n combination
-    # Total: 4 stimulus types × 4 pairs × 32 versions = 512 stimuli
-    num_versions_per_pair = 32
-    
-    stimuli_config = [
-        (STIMULUS_TREND_UP['name'], STIMULUS_TREND_UP),
-        (STIMULUS_TREND_DOWN['name'], STIMULUS_TREND_DOWN),
-        (STIMULUS_SMALL['name'], STIMULUS_SMALL),
-        (STIMULUS_BIG['name'], STIMULUS_BIG)
-    ]
+    sigma = 0.2
+    total = len(SLOPES) * len(N_VALUES) * VERSIONS_PER_COMBO  # 8 × 8 × 2 = 128
     
     manifest = []
-    total_generated = 0
     global_index = 0
     
-    for stimulus_name, stimulus_def in stimuli_config:
-        stim_dir = base_dir / stimulus_name.lower()
-        stim_dir.mkdir(exist_ok=True)
-        
-        for pair_idx, pair in enumerate(stimulus_def['pairs']):
-            slope = pair['slope']
-            n = pair['n']
-            
-            for sigma in noise_levels:
-                for version in range(num_versions_per_pair):
-                    # Generate and save stimulus
-                    filepath, filename, x_values, y_values = generate_and_save_stimulus(
-                        stimulus_name,
-                        {
-                            'index': global_index,
-                            'slope': slope,
-                            'n': n,
-                            'sigma': sigma
-                        },
-                        stim_dir
-                    )
-                    
-                    # Create manifest entry
-                    relative_path = f"{stimulus_name.lower()}/{filename}"
-                    manifest_entry = {
+    for slope in SLOPES:
+        for n in N_VALUES:
+            for version in range(VERSIONS_PER_COMBO):
+                trend_category = 'Trend_Up' if slope > 0 else 'Trend_Down'
+                size_category = 'Big' if n >= 16 else 'Small'
+                
+                filepath, filename, x_values, y_values = generate_and_save_stimulus(
+                    f"stim",
+                    {
                         'index': global_index,
-                        'filename': filename,
-                        'path': relative_path,
-                        'stimulus_name': stimulus_name,
-                        'pair_idx': pair_idx,
                         'slope': slope,
                         'n': n,
-                        'sigma': sigma,
-                        'version': version,
-                        'x_values': ','.join([f'{x:.6f}' for x in x_values]),
-                        'y_values': ','.join([f'{y:.6f}' for y in y_values])
-                    }
-                    
-                    manifest.append(manifest_entry)
-                    total_generated += 1
-                    global_index += 1
-                    
-                    if total_generated % 50 == 0:
-                        print(f"Progress: {total_generated}/512 stimuli generated...")
+                        'sigma': sigma
+                    },
+                    base_dir
+                )
+                
+                manifest.append({
+                    'index': global_index,
+                    'filename': filename,
+                    'path': filename,
+                    'slope': slope,
+                    'n': n,
+                    'sigma': sigma,
+                    'version': version,
+                    'trend_category': trend_category,
+                    'size_category': size_category,
+                    'x_values': ','.join([f'{x:.6f}' for x in x_values]),
+                    'y_values': ','.join([f'{y:.6f}' for y in y_values])
+                })
+                
+                global_index += 1
+                if global_index % 20 == 0:
+                    print(f"Progress: {global_index}/{total} stimuli generated...")
     
-    # Save manifest as CSV
+    # Generate 5 neutral stimuli: 15 dots, 0 slope
+    for v in range(20):
+        filepath, filename, x_values, y_values = generate_and_save_stimulus(
+            "stim",
+            {'index': global_index, 'slope': 0, 'n': 15, 'sigma': sigma},
+            base_dir
+        )
+        manifest.append({
+            'index': global_index,
+            'filename': filename,
+            'path': filename,
+            'slope': 0,
+            'n': 15,
+            'sigma': sigma,
+            'version': v,
+            'trend_category': 'Neutral',
+            'size_category': 'Neutral',
+            'x_values': ','.join([f'{x:.6f}' for x in x_values]),
+            'y_values': ','.join([f'{y:.6f}' for y in y_values])
+        })
+        global_index += 1
+    
     manifest_path = base_dir / 'manifest.csv'
-    if manifest:
-        with open(manifest_path, 'w', newline='') as f:
-            writer = csv.DictWriter(f, fieldnames=manifest[0].keys())
-            writer.writeheader()
-            writer.writerows(manifest)
+    with open(manifest_path, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=manifest[0].keys())
+        writer.writeheader()
+        writer.writerows(manifest)
     
-    print(f"\nDone! Generated {total_generated} stimuli total")
-    print(f"Breakdown:")
-    print(f"  - {STIMULUS_TREND_UP['name']}: 128 images (32 × 4 pairs)")
-    print(f"  - {STIMULUS_TREND_DOWN['name']}: 128 images (32 × 4 pairs)")
-    print(f"  - Small: 128 images (32 × 4 pairs)")
-    print(f"  - Big: 128 images (32 × 4 pairs)")
-    print(f"  - Total: {total_generated} stimuli saved in {base_dir}/")
-    print(f"  - Manifest saved to {manifest_path}")
+    print(f"\nDone! Generated {global_index} stimuli total")
+    print(f"  8 slopes × 8 n values × {VERSIONS_PER_COMBO} versions = {total}")
+    print(f"  Manifest saved to {manifest_path}")
+    
+    # Generate 20 separate neutral stimuli with their own manifest
+    neutral_dir = base_dir / 'neutral'
+    neutral_dir.mkdir(exist_ok=True)
+    neutral_manifest = []
+    
+    for i in range(20):
+        x_norm, y_norm = generate_data(15, 0, sigma)
+        
+        # Calculate observed regression slope from the generated points
+        x_arr = np.array(x_norm)
+        y_arr = np.array(y_norm)
+        n = len(x_arr)
+        observed_slope = (n * np.sum(x_arr * y_arr) - np.sum(x_arr) * np.sum(y_arr)) / \
+                         (n * np.sum(x_arr**2) - np.sum(x_arr)**2)
+        
+        x_canvas = [to_canvas_x(xi) for xi in x_norm]
+        y_canvas = [to_canvas_y(yi) for yi in y_norm]
+        
+        fig, ax = plt.subplots(figsize=(CANVAS_SIZE/100, CANVAS_SIZE/100), dpi=100)
+        ax.set_xlim(0, CANVAS_SIZE)
+        ax.set_ylim(0, CANVAS_SIZE)
+        ax.invert_yaxis()
+        ax.set_aspect('equal')
+        fig.patch.set_facecolor('#1a1a1a')
+        ax.set_facecolor('#1a1a1a')
+        ax.axis('off')
+        ax.scatter(x_canvas, y_canvas, s=DOT_RADIUS*2, c='white', edgecolors='none')
+        
+        filename = f"neutral_{i:04d}.png"
+        plt.savefig(neutral_dir / filename, facecolor='#1a1a1a', bbox_inches='tight', pad_inches=0)
+        plt.close()
+        
+        neutral_manifest.append({
+            'index': i,
+            'filename': filename,
+            'path': f"neutral/{filename}",
+            'slope_param': 0,
+            'observed_slope': round(observed_slope, 6),
+            'n': 15,
+            'sigma': sigma,
+            'x_values': ','.join([f'{x:.6f}' for x in x_norm]),
+            'y_values': ','.join([f'{y:.6f}' for y in y_norm])
+        })
+    
+    neutral_manifest_path = base_dir / 'manifest_neutral.csv'
+    with open(neutral_manifest_path, 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=neutral_manifest[0].keys())
+        writer.writeheader()
+        writer.writerows(neutral_manifest)
+    
+    print(f"\nGenerated 20 neutral stimuli in {neutral_dir}/")
+    print(f"  Neutral manifest saved to {neutral_manifest_path}")
 
 if __name__ == '__main__':
     main()
