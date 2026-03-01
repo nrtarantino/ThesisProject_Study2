@@ -48,6 +48,30 @@
             top: 50vh;
         }
         
+        #trialDisplay .border-line {
+            position: absolute;
+            background: white;
+            pointer-events: none;
+        }
+        #trialDisplay .border-left {
+            left: 0;
+            top: 0;
+            width: 2px;
+            height: 100vh;
+        }
+        #trialDisplay .border-right {
+            right: 0;
+            top: 0;
+            width: 2px;
+            height: 100vh;
+        }
+        #trialDisplay .border-horizontal {
+            left: 0;
+            top: 50vh;
+            width: 100%;
+            height: 2px;
+        }
+        
         #instructions {
             max-width: 800px;
             padding: 20px;
@@ -74,6 +98,9 @@
         <div id="trialDisplay">
             <img id="topImage" alt="Top">
             <img id="bottomImage" alt="Bottom">
+            <div class="border-line border-left"></div>
+            <div class="border-line border-right"></div>
+            <div class="border-line border-horizontal"></div>
         </div>
     </div>
 
