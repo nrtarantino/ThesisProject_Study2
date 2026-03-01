@@ -5,14 +5,14 @@ import csv
 from pathlib import Path
 
 # Parameters matching your HTML file
-CANVAS_SIZE = 400
-MARGIN = 30
+CANVAS_SIZE = 700
+MARGIN = 20
 PLOT_SIZE = CANVAS_SIZE - 2 * MARGIN
-DOT_RADIUS = 4
-X_MIN = -0.3
-X_MAX = 1.3
-Y_MIN = -0.3
-Y_MAX = 1.3
+DOT_RADIUS = 6
+X_MIN = -0.1
+X_MAX = 1.1
+Y_MIN = -0.1
+Y_MAX = 1.1
 
 # Fully crossed design: 8 slopes × 8 n values
 SLOPES = [-0.375, -0.3, -0.225, -0.075, 0.075, 0.225, 0.3, 0.375]
@@ -45,8 +45,8 @@ def generate_data(n, alpha, sigma):
         adjustment = 0.5 - mean_y
         y = y + adjustment
         
-        # Check if all points are within bounds AFTER adjustment
-        if np.all((y >= -0.27) & (y <= 1.27)):
+        # Check if all points are within the visible axis range
+        if np.all((y >= Y_MIN) & (y <= Y_MAX)) and np.all((x >= X_MIN) & (x <= X_MAX)):
             valid = True
     
     return x, y
