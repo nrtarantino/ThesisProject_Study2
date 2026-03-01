@@ -341,11 +341,15 @@
             
             let topReady = false, bottomReady = false;
             let minDelayElapsed = !itiDelayMs || itiDelayMs <= 0;
+            const STIMULUS_DURATION_MS = 1500;
             function showWhenReady() {
                 if (topReady && bottomReady && minDelayElapsed) {
                     document.getElementById('trialDisplay').style.display = 'block';
                     trialStartTime = Date.now();
                     isIntertrialInterval = false;
+                    setTimeout(() => {
+                        document.getElementById('trialDisplay').style.display = 'none';
+                    }, STIMULUS_DURATION_MS);
                 }
             }
             topImg.onload = () => { topReady = true; showWhenReady(); };
