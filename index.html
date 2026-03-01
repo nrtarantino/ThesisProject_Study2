@@ -23,29 +23,34 @@
             position: relative;
         }
         
-        #trialDisplay {
+        #neutralDisplay {
             display: none;
-            width: 100vw;
-            height: 100vh;
             position: fixed;
             top: 0;
             left: 0;
-        }
-        
-        #trialDisplay img {
-            position: absolute;
-            left: 0;
             width: 100vw;
             height: 50vh;
+        }
+        
+        #neutralDisplay img {
+            width: 100%;
+            height: 100%;
             object-fit: contain;
         }
         
-        #topImage {
-            top: 0;
+        #trialDisplay {
+            display: none;
+            position: fixed;
+            top: 50vh;
+            left: 0;
+            width: 100vw;
+            height: 50vh;
         }
         
-        #bottomImage {
-            top: 50vh;
+        #trialDisplay img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
         
         #centerLine {
@@ -88,9 +93,11 @@
         </div>
         
         <div id="centerLine"></div>
+        <div id="neutralDisplay">
+            <img id="topImage" alt="Neutral">
+        </div>
         <div id="trialDisplay">
-            <img id="topImage" alt="Top">
-            <img id="bottomImage" alt="Bottom">
+            <img id="bottomImage" alt="Stimulus">
         </div>
     </div>
 
@@ -264,6 +271,7 @@
         function showReminder() {
             resumeAfterReminder = true;
             document.getElementById('trialDisplay').style.display = 'none';
+            document.getElementById('neutralDisplay').style.display = 'none';
             document.getElementById('instructionText').innerHTML = `
                 <p>Remember</p>
                 <p>${getBlockInstructions(true)}</p>
@@ -290,6 +298,7 @@
             document.getElementById('instructions').style.display = 'block';
             document.getElementById('startButton').style.display = 'block';
             document.getElementById('centerLine').style.display = 'none';
+            document.getElementById('neutralDisplay').style.display = 'none';
             currentPhase = 'instructions';
         }
         
@@ -301,6 +310,8 @@
             document.getElementById('instructions').style.display = 'none';
             document.getElementById('startButton').style.display = 'none';
             document.getElementById('centerLine').style.display = 'block';
+            document.getElementById('neutralDisplay').style.display = 'block';
+            document.getElementById('topImage').src = NEUTRAL_PATH;
             presentTrial();
         }
         
@@ -324,7 +335,6 @@
             window.currentTrial = trial;
             
             // Start loading immediately (during ITI)
-            document.getElementById('topImage').src = NEUTRAL_PATH;
             document.getElementById('bottomImage').src = `stimuli/${trial.path}`;
             const topImg = document.getElementById('topImage');
             const bottomImg = document.getElementById('bottomImage');
@@ -360,6 +370,7 @@
         
         function showCompletion() {
             document.getElementById('trialDisplay').style.display = 'none';
+            document.getElementById('neutralDisplay').style.display = 'none';
             document.getElementById('instructions').style.display = 'block';
             document.getElementById('centerLine').style.display = 'none';
             document.getElementById('instructionText').textContent = 'Task complete. Thank you for participating.';
@@ -509,6 +520,8 @@
                 document.getElementById('instructions').style.display = 'none';
                 document.getElementById('startButton').style.display = 'none';
                 document.getElementById('centerLine').style.display = 'block';
+                document.getElementById('neutralDisplay').style.display = 'block';
+                document.getElementById('topImage').src = NEUTRAL_PATH;
                 presentTrial();
             } else if (resumeAfterBreak) {
                 resumeAfterBreak = false;
@@ -516,6 +529,8 @@
                 document.getElementById('instructions').style.display = 'none';
                 document.getElementById('startButton').style.display = 'none';
                 document.getElementById('centerLine').style.display = 'block';
+                document.getElementById('neutralDisplay').style.display = 'block';
+                document.getElementById('topImage').src = NEUTRAL_PATH;
                 presentTrial();
             } else {
                 startBlock();
