@@ -95,62 +95,66 @@ def generate_and_save_stimulus(stimulus_name, index, output_dir):
     
     return filepath, filename, x_norm, y_norm
 
-def main(no_neutral=False):
+def main(no_neutral=False, neutral_only=False):
     base_dir = Path('stimuli')
     base_dir.mkdir(exist_ok=True)
     
     sigma = 0.175
-    total = len(SLOPES) * len(N_VALUES) * VERSIONS_PER_COMBO  # 8 × 8 × 2 = 128
+    
+    if not neutral_only:
+        total = len(SLOPES) * len(N_VALUES) * VERSIONS_PER_COMBO  # 8 × 8 × 2 = 128
     
     manifest = []
     global_index = 0
     
-    for slope in SLOPES:
-        for n in N_VALUES:
-            for version in range(VERSIONS_PER_COMBO):
-                trend_category = 'Trend_Up' if slope > 0 else 'Trend_Down'
-                size_category = 'Big' if n >= 16 else 'Small'
-                
-                filepath, filename, x_values, y_values = generate_and_save_stimulus(
-                    f"stim",
-                    {
+    if not neutral_only:
+        for slope in SLOPES:
+            for n in N_VALUES:
+                for version in range(VERSIONS_PER_COMBO):
+                    trend_category = 'Trend_Up' if slope > 0 else 'Trend_Down'
+                    size_category = 'Big' if n >= 16 else 'Small'
+                    
+                    filepath, filename, x_values, y_values = generate_and_save_stimulus(
+                        f"stim",
+                        {
+                            'index': global_index,
+                            'slope': slope,
+                            'n': n,
+                            'sigma': sigma
+                        },
+                        base_dir
+                    )
+                    
+                    manifest.append({
                         'index': global_index,
+                        'filename': filename,
+                        'path': filename,
                         'slope': slope,
                         'n': n,
-                        'sigma': sigma
-                    },
-                    base_dir
-                )
-                
-                manifest.append({
-                    'index': global_index,
-                    'filename': filename,
-                    'path': filename,
-                    'slope': slope,
-                    'n': n,
-                    'sigma': sigma,
-                    'version': version,
-                    'trend_category': trend_category,
-                    'size_category': size_category,
-                    'x_values': ','.join([f'{x:.6f}' for x in x_values]),
-                    'y_values': ','.join([f'{y:.6f}' for y in y_values])
-                })
-                
-                global_index += 1
-                if global_index % 20 == 0:
-                    print(f"Progress: {global_index}/{total} stimuli generated...")
+                        'sigma': sigma,
+                        'version': version,
+                        'trend_category': trend_category,
+                        'size_category': size_category,
+                        'x_values': ','.join([f'{x:.6f}' for x in x_values]),
+                        'y_values': ','.join([f'{y:.6f}' for y in y_values])
+                    })
+                    
+                    global_index += 1
+                    if global_index % 20 == 0:
+                        print(f"Progress: {global_index}/{total} stimuli generated...")
     
-    manifest_path = base_dir / 'manifest.csv'
-    with open(manifest_path, 'w', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=manifest[0].keys())
-        writer.writeheader()
-        writer.writerows(manifest)
+    if not neutral_only:
+        manifest_path = base_dir / 'manifest.csv'
+        with open(manifest_path, 'w', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=manifest[0].keys())
+            writer.writeheader()
+            writer.writerows(manifest)
+        
+        print(f"\nDone! Generated {global_index} stimuli total")
+        print(f"  8 slopes × 8 n values × {VERSIONS_PER_COMBO} versions = {total}")
+        print(f"  Manifest saved to {manifest_path}")
     
-    print(f"\nDone! Generated {global_index} stimuli total")
-    print(f"  8 slopes × 8 n values × {VERSIONS_PER_COMBO} versions = {total}")
-    print(f"  Manifest saved to {manifest_path}")
-    
-    if no_neutral:
+    if no_neutral and not neutral_only:
         return
     
     # Generate 20 separate neutral stimuli with their own manifest
@@ -208,4 +212,6 @@ def main(no_neutral=False):
 
 if __name__ == '__main__':
     import sys
-    main(no_neutral='--no-neutral' in sys.argv)
+    neutral_only = '--neutral-only' in sys.argv
+    no_neutral = '--no-neutral' in sys.argv
+    main(no_neutral=no_neutral, neutral_only=neutral_only)
