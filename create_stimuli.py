@@ -8,7 +8,7 @@ from pathlib import Path
 CANVAS_SIZE = 700
 MARGIN = 20
 PLOT_SIZE = CANVAS_SIZE - 2 * MARGIN
-DOT_RADIUS = 10
+DOT_RADIUS = 20
 X_MIN = -0.1
 X_MAX = 1.1
 Y_MIN = -0.1
