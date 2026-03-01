@@ -249,12 +249,12 @@
             if (block.categoryField === 'trend_category') {
                 const increasingKey = KEY_MAPPING[cond]['Trend_Up'];
                 const decreasingKey = KEY_MAPPING[cond]['Trend_Down'];
-                const rest = `If the dot array on the bottom is increasing compared to the array on the top press the ${increasingKey} key. If the dot array on the bottom is decreasing compared to the array on the top press the ${decreasingKey} key.`;
+                const rest = `Press the ${increasingKey} key if the dot array on the bottom is increasing compared to the array on the top. Press the ${decreasingKey} key if the dot array on the bottom is decreasing compared to the array on the top.`;
                 return justAsBefore ? `Just as in the part before, ${rest.charAt(0).toLowerCase()}${rest.slice(1)}` : rest;
             } else {
                 const moreKey = KEY_MAPPING[cond]['Big'];
                 const fewerKey = KEY_MAPPING[cond]['Small'];
-                const rest = `If the dot array on the bottom has more dots than the array on the top press the ${moreKey} key. If the dot array on the bottom has fewer dots than the array on the top press the ${fewerKey} key.`;
+                const rest = `Press the ${moreKey} key if the dot array on the bottom has more dots than the array on the top. Press the ${fewerKey} key if the dot array on the bottom has fewer dots than the array on the top.`;
                 return justAsBefore ? `Just as in the part before, ${rest.charAt(0).toLowerCase()}${rest.slice(1)}` : rest;
             }
         }
