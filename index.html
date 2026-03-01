@@ -23,11 +23,30 @@
             position: relative;
         }
         
-        #stimulusImage {
+        #trialDisplay {
+            display: none;
             width: 100vw;
             height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+        
+        #trialDisplay img {
+            position: absolute;
+            top: 0;
+            width: 50vw;
+            height: 100vh;
             object-fit: contain;
-            display: none;
+        }
+        
+        #leftImage {
+            left: 0;
+        }
+        
+        #rightImage {
+            right: 0;
+            left: 50vw;
         }
         
         #instructions {
@@ -53,7 +72,10 @@
             <button id="startButton" class="button" style="display: none;">Start</button>
         </div>
         
-        <img id="stimulusImage" alt="Stimulus">
+        <div id="trialDisplay">
+            <img id="leftImage" alt="Left">
+            <img id="rightImage" alt="Right">
+        </div>
     </div>
 
     <script>
@@ -87,6 +109,10 @@
             const category = block.categoryField === 'trend_category' ? trial.trend_category : trial.size_category;
             return KEY_MAPPING[condition][category];
         }
+        
+        // Randomly assign stimulus to left or right hemifield (consistent for whole task)
+        const stimulusSide = Math.random() < 0.5 ? 'left' : 'right';
+        const NEUTRAL_PATH = 'stimuli/neutral/neutral_0000.png';
         
         let manifest = [];
         let currentBlock = 0;
@@ -150,11 +176,13 @@
                     manifest.push(entry);
                 }
                 
-                // Preload all images
+                // Preload all images including neutral
                 manifest.forEach(entry => {
                     const img = new Image();
                     img.src = `stimuli/${entry.path}`;
                 });
+                const neutralPreload = new Image();
+                neutralPreload.src = NEUTRAL_PATH;
                 
                 // Shuffle and split into two equal pools of 256
                 const shuffled = shuffleArray(manifest);
@@ -204,7 +232,6 @@
             currentPhase = 'main';
             document.getElementById('instructions').style.display = 'none';
             document.getElementById('startButton').style.display = 'none';
-            document.getElementById('stimulusImage').style.display = 'block';
             presentTrial();
         }
         
@@ -216,7 +243,7 @@
                     return;
                 }
                 currentPart++;
-                document.getElementById('stimulusImage').style.display = 'none';
+                document.getElementById('trialDisplay').style.display = 'none';
                 showPartScreen();
                 return;
             }
@@ -227,24 +254,29 @@
             
             window.currentTrial = trial;
             
-            const img = document.getElementById('stimulusImage');
-            img.src = `stimuli/${trial.path}`;
-            img.style.display = 'block';
+            const leftImg = document.getElementById('leftImage');
+            const rightImg = document.getElementById('rightImage');
+            const stimImg = stimulusSide === 'left' ? leftImg : rightImg;
+            const neutralImg = stimulusSide === 'left' ? rightImg : leftImg;
+            
+            stimImg.src = `stimuli/${trial.path}`;
+            neutralImg.src = NEUTRAL_PATH;
+            document.getElementById('trialDisplay').style.display = 'block';
             
             trialStartTime = Date.now();
-            img.onload = () => { trialStartTime = Date.now(); };
-            if (img.complete) { trialStartTime = Date.now(); }
+            stimImg.onload = () => { trialStartTime = Date.now(); };
+            if (stimImg.complete) { trialStartTime = Date.now(); }
         }
         
         function showBreak() {
             currentPart++;
             resumeAfterBreak = true;
-            document.getElementById('stimulusImage').style.display = 'none';
+            document.getElementById('trialDisplay').style.display = 'none';
             showPartScreen();
         }
         
         function showCompletion() {
-            document.getElementById('stimulusImage').style.display = 'none';
+            document.getElementById('trialDisplay').style.display = 'none';
             document.getElementById('instructions').style.display = 'block';
             document.getElementById('instructionText').textContent = 'Task complete. Thank you for participating.';
             document.getElementById('startButton').style.display = 'none';
@@ -254,7 +286,7 @@
         function exportTrialData() {
             if (trialData.length === 0) return;
             
-            const headers = ['sonaId','qualtricsResponseId','trialNumber','stimulusIndex','n','slope','noise','responseCode','blockOrder','accuracy','reactionTime','blockName'];
+            const headers = ['sonaId','qualtricsResponseId','trialNumber','stimulusIndex','n','slope','noise','responseCode','blockOrder','stimulusSide','accuracy','reactionTime','blockName'];
             let csv = headers.join(',') + '\n';
             
             trialData.forEach(t => {
@@ -268,6 +300,7 @@
                     t.noise,
                     t.responseCode,
                     t.blockOrder,
+                    stimulusSide,
                     t.accuracy,
                     t.reactionTime,
                     t.blockName
@@ -346,8 +379,8 @@
                 blockName: BLOCKS[currentBlock].name
             });
             
-            // Hide stimulus, 500ms blank ITI
-            document.getElementById('stimulusImage').style.display = 'none';
+            // Hide both images, 500ms blank ITI
+            document.getElementById('trialDisplay').style.display = 'none';
             isIntertrialInterval = true;
             
             currentTrialIndex++;
@@ -373,7 +406,6 @@
                 currentPhase = 'main';
                 document.getElementById('instructions').style.display = 'none';
                 document.getElementById('startButton').style.display = 'none';
-                document.getElementById('stimulusImage').style.display = 'block';
                 presentTrial();
             } else {
                 startBlock();
