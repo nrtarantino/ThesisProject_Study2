@@ -8,7 +8,7 @@ from pathlib import Path
 CANVAS_SIZE = 700
 MARGIN = 20
 PLOT_SIZE = CANVAS_SIZE - 2 * MARGIN
-DOT_RADIUS = 6
+DOT_RADIUS = 10
 X_MIN = -0.1
 X_MAX = 1.1
 Y_MIN = -0.1
@@ -40,10 +40,11 @@ def generate_data(n, alpha, sigma):
         # Generate y values: yi = α * xi + εi
         y = np.array([alpha * xi + random_normal(0, sigma) for xi in x])
         
-        # Adjust vertically so center of mass (mean) of y-values is at 0.5
-        mean_y = np.mean(y)
-        adjustment = 0.5 - mean_y
-        y = y + adjustment
+        # Center the dot array: subtract mean so it's centred in the middle
+        y = y - np.mean(y)
+        
+        # Shift to visible range midpoint (0.5)
+        y = y + 0.5
         
         # Check if all points are within the visible axis range
         if np.all((y >= Y_MIN) & (y <= Y_MAX)) and np.all((x >= X_MIN) & (x <= X_MAX)):
@@ -99,7 +100,7 @@ def main(no_neutral=False, neutral_only=False):
     base_dir = Path('stimuli')
     base_dir.mkdir(exist_ok=True)
     
-    sigma = 0.175
+    sigma = 0.15
     
     if not neutral_only:
         total = len(SLOPES) * len(N_VALUES) * VERSIONS_PER_COMBO  # 8 × 8 × 2 = 128
