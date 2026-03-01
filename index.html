@@ -148,6 +148,7 @@
         let resumeAfterBreak = false;
         let resumeAfterReminder = false;
         let recentResponses = [];
+        let stimulusHideTimeout = null;
         
         const BLOCKS_ORIGINAL = [
             { name: 'Trend', categoryField: 'trend_category' },
@@ -303,6 +304,10 @@
         }
         
         function presentTrial(itiDelayMs) {
+            if (stimulusHideTimeout) {
+                clearTimeout(stimulusHideTimeout);
+                stimulusHideTimeout = null;
+            }
             if (trialsPool.length === 0) {
                 currentBlock++;
                 if (currentBlock >= BLOCKS.length) {
@@ -328,13 +333,16 @@
             
             let topReady = false, bottomReady = false;
             let minDelayElapsed = !itiDelayMs || itiDelayMs <= 0;
+            let stimulusShown = false;
             const STIMULUS_DURATION_MS = 1500;
             function showWhenReady() {
-                if (topReady && bottomReady && minDelayElapsed) {
+                if (topReady && bottomReady && minDelayElapsed && !stimulusShown) {
+                    stimulusShown = true;
                     document.getElementById('trialDisplay').style.display = 'block';
                     trialStartTime = Date.now();
                     isIntertrialInterval = false;
-                    setTimeout(() => {
+                    stimulusHideTimeout = setTimeout(() => {
+                        stimulusHideTimeout = null;
                         document.getElementById('trialDisplay').style.display = 'none';
                     }, STIMULUS_DURATION_MS);
                 }
@@ -467,7 +475,10 @@
             // Track recent responses for reminder check
             recentResponses.push(correct);
             
-            // Hide both images, 500ms blank ITI
+            if (stimulusHideTimeout) {
+                clearTimeout(stimulusHideTimeout);
+                stimulusHideTimeout = null;
+            }
             document.getElementById('trialDisplay').style.display = 'none';
             isIntertrialInterval = true;
             
