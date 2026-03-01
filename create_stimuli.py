@@ -95,11 +95,11 @@ def generate_and_save_stimulus(stimulus_name, index, output_dir):
     
     return filepath, filename, x_norm, y_norm
 
-def main():
+def main(no_neutral=False):
     base_dir = Path('stimuli')
     base_dir.mkdir(exist_ok=True)
     
-    sigma = 0.2
+    sigma = 0.175
     total = len(SLOPES) * len(N_VALUES) * VERSIONS_PER_COMBO  # 8 × 8 × 2 = 128
     
     manifest = []
@@ -149,6 +149,9 @@ def main():
     print(f"\nDone! Generated {global_index} stimuli total")
     print(f"  8 slopes × 8 n values × {VERSIONS_PER_COMBO} versions = {total}")
     print(f"  Manifest saved to {manifest_path}")
+    
+    if no_neutral:
+        return
     
     # Generate 20 separate neutral stimuli with their own manifest
     neutral_dir = base_dir / 'neutral'
@@ -204,4 +207,5 @@ def main():
     print(f"  Neutral manifest saved to {neutral_manifest_path}")
 
 if __name__ == '__main__':
-    main()
+    import sys
+    main(no_neutral='--no-neutral' in sys.argv)
