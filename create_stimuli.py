@@ -5,10 +5,10 @@ import csv
 from pathlib import Path
 
 # Parameters matching your HTML file
-CANVAS_SIZE = 700  # Reduced from 900
-MARGIN = 70  # Proportionally reduced
+CANVAS_SIZE = 400
+MARGIN = 30
 PLOT_SIZE = CANVAS_SIZE - 2 * MARGIN
-DOT_RADIUS = 4  # Slightly smaller dots
+DOT_RADIUS = 4
 X_MIN = -0.3
 X_MAX = 1.3
 Y_MIN = -0.3
