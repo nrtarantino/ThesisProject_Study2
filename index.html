@@ -34,19 +34,18 @@
         
         #trialDisplay img {
             position: absolute;
-            top: 0;
-            width: 50vw;
-            height: 100vh;
+            left: 0;
+            width: 100vw;
+            height: 50vh;
             object-fit: contain;
         }
         
-        #leftImage {
-            left: 0;
+        #topImage {
+            top: 0;
         }
         
-        #rightImage {
-            right: 0;
-            left: 50vw;
+        #bottomImage {
+            top: 50vh;
         }
         
         #instructions {
@@ -73,8 +72,8 @@
         </div>
         
         <div id="trialDisplay">
-            <img id="leftImage" alt="Left">
-            <img id="rightImage" alt="Right">
+            <img id="topImage" alt="Top">
+            <img id="bottomImage" alt="Bottom">
         </div>
     </div>
 
@@ -110,8 +109,6 @@
             return KEY_MAPPING[condition][category];
         }
         
-        // Randomly assign stimulus to left or right hemifield (consistent for whole task)
-        const stimulusSide = Math.random() < 0.5 ? 'left' : 'right';
         const NEUTRAL_PATH = 'stimuli/neutral/neutral_0000.png';
         
         let manifest = [];
@@ -215,19 +212,17 @@
         }
         
         function getBlockInstructions() {
-            const stimSide = stimulusSide;
-            const neutralSide = stimulusSide === 'left' ? 'right' : 'left';
             const block = BLOCKS[currentBlock];
             const cond = participantCondition === 1 ? 'condition1' : 'condition2';
             
             if (block.categoryField === 'trend_category') {
                 const increasingKey = KEY_MAPPING[cond]['Trend_Up'];
                 const decreasingKey = KEY_MAPPING[cond]['Trend_Down'];
-                return `Use the A and L keys to indicate whether the trend of the dot array on the ${stimSide} is increasing or decreasing compared to the trend of the dot array on the ${neutralSide}. If the dot array on the ${stimSide} is increasing compared to the array on the ${neutralSide} press the ${increasingKey} key. If the dot array on the ${stimSide} is decreasing compared to the array on the ${neutralSide} press the ${decreasingKey} key.`;
+                return `Use the A and L keys to indicate whether the trend of the dot array on the bottom is increasing or decreasing compared to the trend of the dot array on the top. If the dot array on the bottom is increasing compared to the array on the top press the ${increasingKey} key. If the dot array on the bottom is decreasing compared to the array on the top press the ${decreasingKey} key.`;
             } else {
                 const moreKey = KEY_MAPPING[cond]['Big'];
                 const fewerKey = KEY_MAPPING[cond]['Small'];
-                return `Use the A and L keys to indicate whether the dot array on the ${stimSide} has more or fewer dots than the array on the ${neutralSide}. If the dot array on the ${stimSide} has more dots than the array on the ${neutralSide} press the ${moreKey} key. If the dot array on the ${stimSide} has fewer dots than the array on the ${neutralSide} press the ${fewerKey} key.`;
+                return `Use the A and L keys to indicate whether the dot array on the bottom has more or fewer dots than the array on the top. If the dot array on the bottom has more dots than the array on the top press the ${moreKey} key. If the dot array on the bottom has fewer dots than the array on the top press the ${fewerKey} key.`;
             }
         }
         
@@ -269,13 +264,9 @@
             
             window.currentTrial = trial;
             
-            const leftImg = document.getElementById('leftImage');
-            const rightImg = document.getElementById('rightImage');
-            const stimImg = stimulusSide === 'left' ? leftImg : rightImg;
-            const neutralImg = stimulusSide === 'left' ? rightImg : leftImg;
-            
-            stimImg.src = `stimuli/${trial.path}`;
-            neutralImg.src = NEUTRAL_PATH;
+            document.getElementById('topImage').src = NEUTRAL_PATH;
+            document.getElementById('bottomImage').src = `stimuli/${trial.path}`;
+            const stimImg = document.getElementById('bottomImage');
             document.getElementById('trialDisplay').style.display = 'block';
             
             trialStartTime = Date.now();
@@ -301,7 +292,7 @@
         function exportTrialData() {
             if (trialData.length === 0) return;
             
-            const headers = ['sonaId','qualtricsResponseId','trialNumber','stimulusIndex','n','slope','noise','responseCode','blockOrder','stimulusSide','accuracy','reactionTime','blockName'];
+            const headers = ['sonaId','qualtricsResponseId','trialNumber','stimulusIndex','n','slope','noise','responseCode','blockOrder','accuracy','reactionTime','blockName'];
             let csv = headers.join(',') + '\n';
             
             trialData.forEach(t => {
@@ -315,7 +306,6 @@
                     t.noise,
                     t.responseCode,
                     t.blockOrder,
-                    stimulusSide,
                     t.accuracy,
                     t.reactionTime,
                     t.blockName
