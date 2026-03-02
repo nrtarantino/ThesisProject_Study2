@@ -309,14 +309,16 @@
                 stimulusHideTimeout = null;
             }
             if (trialsPool.length === 0) {
-                currentBlock++;
-                if (currentBlock >= BLOCKS.length) {
-                    showCompletion();
-                    return;
-                }
-                currentPart++;
-                document.getElementById('trialDisplay').style.display = 'none';
-                showPartScreen();
+                setTimeout(() => {
+                    currentBlock++;
+                    if (currentBlock >= BLOCKS.length) {
+                        showCompletion();
+                        return;
+                    }
+                    currentPart++;
+                    document.getElementById('trialDisplay').style.display = 'none';
+                    showPartScreen();
+                }, 500);
                 return;
             }
             
@@ -380,7 +382,7 @@
         function exportTrialData() {
             if (trialData.length === 0) return;
             
-            const headers = ['sonaId','qualtricsResponseId','trialNumber','stimulusIndex','n','slope','noise','responseCode','blockOrder','accuracy','reactionTime','blockName'];
+            const headers = ['sonaId','qualtricsResponseId','trialNumber','stimulusIndex','n','slope','noise','responseCode','blockOrder','accuracy','reactionTime','blockName','responseKey'];
             let csv = headers.join(',') + '\n';
             
             trialData.forEach(t => {
@@ -396,7 +398,8 @@
                     t.blockOrder,
                     t.accuracy,
                     t.reactionTime,
-                    t.blockName
+                    t.blockName,
+                    t.responseKey
                 ].join(',') + '\n';
             });
             
@@ -469,7 +472,8 @@
                 blockOrder: blockOrder,
                 accuracy: correct,
                 reactionTime: reactionTime,
-                blockName: BLOCKS[currentBlock].name
+                blockName: BLOCKS[currentBlock].name,
+                responseKey: key
             });
             
             // Track recent responses for reminder check
