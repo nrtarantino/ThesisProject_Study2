@@ -20,7 +20,7 @@ Y_MAX = 1.1
 DOT_DIAMETER_PX = round(2 * math.sqrt((DOT_RADIUS * 2) / math.pi) * (DPI / 72))
 
 # Fully crossed design: 8 slopes × 8 n values
-SLOPES = [-0.375, -0.3, -0.225, -0.075, 0.075, 0.225, 0.3, 0.375]
+SLOPES = [-0.595, -0.425, -0.255, -0.085, 0.085, 0.255, 0.425, 0.595]
 N_VALUES = [8, 10, 12, 14, 16, 18, 20, 22]
 VERSIONS_PER_COMBO = 8
 
