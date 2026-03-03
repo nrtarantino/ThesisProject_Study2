@@ -6,15 +6,15 @@ import math
 from pathlib import Path
 
 # Parameters matching your HTML file
-CANVAS_SIZE = 700
+CANVAS_SIZE = 900
 DPI = 100
 MARGIN = 20
 PLOT_SIZE = CANVAS_SIZE - 2 * MARGIN
 DOT_RADIUS = 25
-X_MIN = -0.1
-X_MAX = 1.1
-Y_MIN = -0.1
-Y_MAX = 1.1
+X_MIN = -0.27
+X_MAX = 1.27
+Y_MIN = -0.27
+Y_MAX = 1.27
 
 # Dot size in pixels (diameter) at canvas DPI: matplotlib s is area in points², 1 pt = 1/72 inch
 DOT_DIAMETER_PX = round(2 * math.sqrt((DOT_RADIUS * 2) / math.pi) * (DPI / 72))
