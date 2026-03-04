@@ -23,6 +23,7 @@ DOT_DIAMETER_PX = round(2 * math.sqrt((DOT_RADIUS * 2) / math.pi) * (DPI / 72))
 SLOPES = [-0.3640, -0.2679, -0.1763, -0.0875, 0.0875, 0.1763, 0.2679, 0.3640]
 N_VALUES = [8, 10, 12, 14, 16, 18, 20, 22]
 VERSIONS_PER_COMBO = 4  # 8 slopes × 8 n values × 4 versions = 256 stimuli
+TRAINING_VERSIONS = 1  # 8 slopes × 8 n values × 1 = 64 training stimuli
 
 def random_normal(mean=0, std_dev=1):
     """Box-Muller transform for normal distribution"""
@@ -129,12 +130,72 @@ def generate_and_save_stimulus(stimulus_name, index, output_dir):
     
     return filepath, filename, x_norm, y_norm, total_out_of_bounds, sign_mismatch_retries
 
-def main(no_neutral=False, neutral_only=False):
+def main(no_neutral=False, neutral_only=False, training_only=False):
     # Use script directory so manifest/stimuli always land in project folder
     base_dir = Path(__file__).parent / 'stimuli'
     base_dir.mkdir(exist_ok=True)
     
     sigma = 0.15
+    
+    if training_only:
+        training_dir = base_dir / 'training'
+        training_dir.mkdir(exist_ok=True)
+        training_manifest = []
+        train_index = 0
+        total_train = len(SLOPES) * len(N_VALUES) * TRAINING_VERSIONS
+        
+        for slope in SLOPES:
+            for n in N_VALUES:
+                for version in range(TRAINING_VERSIONS):
+                    trend_category = 'Trend_Up' if slope > 0 else 'Trend_Down'
+                    size_category = 'Big' if n >= 16 else 'Small'
+                    
+                    filepath, filename, x_values, y_values, out_of_bounds_retries, sign_mismatch_retries = generate_and_save_stimulus(
+                        "train",
+                        {
+                            'index': train_index,
+                            'slope': slope,
+                            'n': n,
+                            'sigma': sigma
+                        },
+                        training_dir
+                    )
+                    
+                    observed_slope = _observed_slope(x_values, y_values, fallback=slope)
+                    
+                    training_manifest.append({
+                        'index': train_index,
+                        'filename': filename,
+                        'path': f'training/{filename}',
+                        'slope': slope,
+                        'observed_slope': round(observed_slope, 6),
+                        'n': n,
+                        'sigma': sigma,
+                        'version': version,
+                        'trend_category': trend_category,
+                        'size_category': size_category,
+                        'dot_size_px': DOT_DIAMETER_PX,
+                        'out_of_bounds_retries': out_of_bounds_retries,
+                        'sign_mismatch_retries': sign_mismatch_retries,
+                        'stimulus_type': 'training',
+                        'x_values': ','.join([f'{x:.6f}' for x in x_values]),
+                        'y_values': ','.join([f'{y:.6f}' for y in y_values])
+                    })
+                    
+                    train_index += 1
+                    if train_index % 20 == 0:
+                        print(f"Progress: {train_index}/{total_train} training stimuli generated...")
+        
+        training_manifest_path = base_dir / 'manifest_training.csv'
+        with open(training_manifest_path, 'w', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=training_manifest[0].keys())
+            writer.writeheader()
+            writer.writerows(training_manifest)
+        
+        print(f"\nDone! Generated {train_index} training stimuli total")
+        print(f"  8 slopes × 8 n values × {TRAINING_VERSIONS} example = {total_train}")
+        print(f"  Manifest saved to {training_manifest_path}")
+        return
     
     if not neutral_only:
         total = len(SLOPES) * len(N_VALUES) * VERSIONS_PER_COMBO  # 8 × 8 × 2 = 128
@@ -257,4 +318,5 @@ if __name__ == '__main__':
     import sys
     neutral_only = '--neutral-only' in sys.argv
     no_neutral = '--no-neutral' in sys.argv
-    main(no_neutral=no_neutral, neutral_only=neutral_only)
+    training_only = '--training' in sys.argv
+    main(no_neutral=no_neutral, neutral_only=neutral_only, training_only=training_only)

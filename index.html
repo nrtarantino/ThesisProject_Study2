@@ -216,6 +216,8 @@
         let currentPhase = 'instructions';
         let currentTrialIndex = 0;
         let trialsPool = [];
+        let trainingManifest = [];
+        let isTrainingPhase = false;
         let trialStartTime = 0;
         let trialData = [];
         let globalTrialNumber = 0;
@@ -283,6 +285,34 @@
                     const img = new Image();
                     img.src = `stimuli/${entry.path}`;
                 });
+                
+                try {
+                    const trainResponse = await fetch('stimuli/manifest_training.csv', { cache: 'no-store' });
+                    if (trainResponse.ok) {
+                        const trainText = await trainResponse.text();
+                        const trainLines = trainText.split('\n');
+                        const trainHeaders = trainLines[0].split(',');
+                        for (let i = 1; i < trainLines.length; i++) {
+                            if (trainLines[i].trim() === '') continue;
+                            const values = parseCSVLine(trainLines[i]);
+                            if (values.length < trainHeaders.length) continue;
+                            const entry = {};
+                            trainHeaders.forEach((header, idx) => {
+                                entry[header.trim()] = values[idx] ? values[idx].trim() : '';
+                            });
+                            entry.index = parseInt(entry.index);
+                            entry.slope = parseFloat(entry.slope);
+                            entry.n = parseInt(entry.n);
+                            entry.sigma = parseFloat(entry.sigma || 0.15);
+                            trainingManifest.push(entry);
+                        }
+                        trainingManifest.forEach(entry => {
+                            const img = new Image();
+                            img.src = `stimuli/${entry.path}`;
+                        });
+                    }
+                } catch (e) {}
+                
                 const neutralPreload = new Image();
                 neutralPreload.src = NEUTRAL_PATH;
                 
@@ -420,7 +450,14 @@
         });
         
         function startBlock() {
-            trialsPool = shuffleArray([...manifest]);
+            if (trainingManifest.length >= 10) {
+                const shuffled = shuffleArray([...trainingManifest]);
+                trialsPool = shuffled.slice(0, 10);
+                isTrainingPhase = true;
+            } else {
+                trialsPool = shuffleArray([...manifest]);
+                isTrainingPhase = false;
+            }
             currentTrialIndex = 0;
             recentResponses = [];
             currentPhase = 'main';
@@ -439,6 +476,14 @@
             }
             hideReminderText();
             if (trialsPool.length === 0) {
+                if (isTrainingPhase) {
+                    isTrainingPhase = false;
+                    trialsPool = shuffleArray([...manifest]);
+                    currentTrialIndex = 0;
+                    recentResponses = [];
+                    setTimeout(() => presentTrial(500), 500);
+                    return;
+                }
                 setTimeout(() => {
                     currentBlock++;
                     if (currentBlock >= BLOCKS.length) {
@@ -526,7 +571,7 @@
         function exportTrialData() {
             if (trialData.length === 0) return;
             
-            const headers = ['sonaId','qualtricsResponseId','trialNumber','stimulusIndex','n','slope','noise','responseCode','blockOrder','accuracy','reactionTime','blockName','responseKey'];
+            const headers = ['sonaId','qualtricsResponseId','trialNumber','stimulusIndex','n','slope','noise','responseCode','blockOrder','accuracy','reactionTime','blockName','responseKey','trialType'];
             let csv = headers.join(',') + '\n';
             
             trialData.forEach(t => {
@@ -543,7 +588,8 @@
                     t.accuracy,
                     t.reactionTime,
                     t.blockName,
-                    t.responseKey
+                    t.responseKey,
+                    t.trialType || 'main'
                 ].join(',') + '\n';
             });
             
@@ -617,7 +663,8 @@
                 accuracy: correct,
                 reactionTime: reactionTime,
                 blockName: BLOCKS[currentBlock].name,
-                responseKey: key
+                responseKey: key,
+                trialType: isTrainingPhase ? 'training' : 'main'
             });
             
             // Track recent responses for reminder check
@@ -650,6 +697,12 @@
                     isIntertrialInterval = false;
                     showReminder();
                 }, 500);
+                return;
+            }
+            
+            // Skip break during training (only 10 trials)
+            if (isTrainingPhase) {
+                presentTrial(500);
                 return;
             }
             
