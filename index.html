@@ -198,8 +198,8 @@
         
         // Key mappings: condition determines which key maps to which category
         const KEY_MAPPING = {
-            condition1: { 'Trend_Up': 'L', 'Trend_Down': 'A', 'Big': 'L', 'Small': 'A' },
-            condition2: { 'Trend_Up': 'A', 'Trend_Down': 'L', 'Big': 'A', 'Small': 'L' }
+            condition1: { 'Trend_Up': 'Q', 'Trend_Down': 'P', 'Big': 'Q', 'Small': 'P' },
+            condition2: { 'Trend_Up': 'P', 'Trend_Down': 'Q', 'Big': 'P', 'Small': 'Q' }
         };
         
         function getCorrectKey(trial) {
@@ -376,9 +376,9 @@
         function getOverviewText() {
             const block = BLOCKS[currentBlock];
             if (block.categoryField === 'trend_category') {
-                return `In this part of the study you will be judging the trend of dots in an array. A dot array will appear in the bottom of the screen where the green square is for a short time and you will use the A and L keys to indicate if it has an increasing or decreasing trend compared to the dot array that will be displayed above it where the red square is.`;
+                return `In this part of the study you will be judging the trend of dots in an array. A dot array will appear in the bottom of the screen where the green square is for a short time and you will use the P and Q keys to indicate if it has an increasing or decreasing trend compared to the dot array that will be displayed above it where the red square is.`;
             } else {
-                return `In this part of the study you will be judging the amount of dots in an array. A dot array will appear in the bottom of the screen where the green square is for a short time and you will use the A and L keys to indicate if it has more or less dots compared to the dot array that will be displayed above it where the red square is.`;
+                return `In this part of the study you will be judging the amount of dots in an array. A dot array will appear in the bottom of the screen where the green square is for a short time and you will use the P and Q keys to indicate if it has more or less dots compared to the dot array that will be displayed above it where the red square is.`;
             }
         }
         
@@ -588,7 +588,7 @@
             if (currentPhase === 'instructions' || isIntertrialInterval) return;
             
             const key = e.key.toUpperCase();
-            if (key === 'A' || key === 'L') {
+            if (key === 'P' || key === 'Q') {
                 handleResponse(key);
             }
         });
