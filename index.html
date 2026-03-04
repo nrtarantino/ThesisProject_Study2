@@ -110,6 +110,35 @@
             cursor: pointer;
             display: block;
         }
+        
+        #overviewScreen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            max-width: 800px;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        
+        #overviewPlaceholders {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 400px;
+            margin: 20px 0;
+            border: 2px solid #444;
+        }
+        
+        #overviewRedSquare {
+            height: 120px;
+            background-color: #c00;
+        }
+        
+        #overviewGreenSquare {
+            height: 120px;
+            background-color: #0a0;
+        }
     </style>
 </head>
 <body>
@@ -117,6 +146,15 @@
         <div id="instructions">
             <p id="instructionText">Loading...</p>
             <button id="startButton" class="button" style="display: none;">Start</button>
+        </div>
+        
+        <div id="overviewScreen">
+            <p id="overviewText"></p>
+            <div id="overviewPlaceholders">
+                <div id="overviewRedSquare"></div>
+                <div id="overviewGreenSquare"></div>
+            </div>
+            <button id="continueButton" class="button">Continue</button>
         </div>
         
         <div id="centerLine"></div>
@@ -238,7 +276,7 @@
                 const neutralPreload = new Image();
                 neutralPreload.src = NEUTRAL_PATH;
                 
-                showPartScreen();
+                showOverviewScreen();
             } catch (error) {
                 document.getElementById('instructionText').textContent = 'Error loading stimuli.';
             }
@@ -310,6 +348,7 @@
         function showReminder() {
             resumeAfterReminder = true;
             document.getElementById('trialDisplay').style.display = 'none';
+            document.getElementById('overviewScreen').style.display = 'none';
             hideReminderText();
             document.getElementById('neutralDisplay').style.display = 'none';
             document.getElementById('instructionText').innerHTML = `
@@ -322,7 +361,27 @@
             currentPhase = 'instructions';
         }
         
+        function getOverviewText() {
+            const block = BLOCKS[currentBlock];
+            if (block.categoryField === 'trend_category') {
+                return `In this part of the study you will be judging the trend of dots in an array. A dot array will appear in the bottom of the screen where the green square is for a short time and you will use the A and L keys to indicate if it has an increasing or decreasing trend compared to the dot array that will be displayed above it where the red square is.`;
+            } else {
+                return `In this part of the study you will be judging the amount of dots in an array. A dot array will appear in the bottom of the screen where the green square is for a short time and you will use the A and L keys to indicate if it has more or less dots compared to the dot array that will be displayed above it where the red square is.`;
+            }
+        }
+        
+        function showOverviewScreen() {
+            document.getElementById('overviewText').textContent = getOverviewText();
+            document.getElementById('overviewScreen').style.display = 'flex';
+            document.getElementById('instructions').style.display = 'none';
+            document.getElementById('startButton').style.display = 'none';
+            document.getElementById('continueButton').style.display = 'block';
+            currentPhase = 'overview';
+        }
+        
         function showPartScreen() {
+            document.getElementById('overviewScreen').style.display = 'none';
+            document.getElementById('continueButton').style.display = 'none';
             const taskNum = Math.ceil(currentPart / 2);
             const partNum = ((currentPart - 1) % 2) + 1;
             const isPart2 = (currentPart === 2 || currentPart === 4);
@@ -338,6 +397,10 @@
             document.getElementById('neutralDisplay').style.display = 'none';
             currentPhase = 'instructions';
         }
+        
+        document.getElementById('continueButton').addEventListener('click', () => {
+            showPartScreen();
+        });
         
         function startBlock() {
             trialsPool = shuffleArray([...manifest]);
@@ -368,7 +431,7 @@
                     currentPart++;
                     document.getElementById('trialDisplay').style.display = 'none';
                     hideReminderText();
-                    showPartScreen();
+                    showOverviewScreen();
                 }, 500);
                 return;
             }
@@ -422,12 +485,14 @@
             currentPart++;
             resumeAfterBreak = true;
             document.getElementById('trialDisplay').style.display = 'none';
+            document.getElementById('overviewScreen').style.display = 'none';
             hideReminderText();
             showPartScreen();
         }
         
         function showCompletion() {
             document.getElementById('trialDisplay').style.display = 'none';
+            document.getElementById('overviewScreen').style.display = 'none';
             hideReminderText();
             document.getElementById('neutralDisplay').style.display = 'none';
             document.getElementById('instructions').style.display = 'block';

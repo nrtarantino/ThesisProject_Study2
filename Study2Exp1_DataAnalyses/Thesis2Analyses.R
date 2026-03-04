@@ -4,20 +4,27 @@ df <- df %>%
   mutate(
     slope = as.numeric(as.character(slope)),
     n     = as.numeric(as.character(n)),
-    acc   = as.integer(accuracy)   # TRUE/FALSE -> 1/0
+    acc   = case_when(
+      as.character(accuracy) == "true"  ~ 1L,
+      as.character(accuracy) == "false" ~ 0L,
+      TRUE ~ NA_integer_
+    )
   )
 
 # ---------------- Trend ----------------
 trend <- df %>%
-  filter(blockName == "Trend") %>%
+  filter(blockName == "Trend", !is.na(acc), !is.na(slope), slope != 0) %>%
   mutate(
     level = as.numeric(factor(slope, levels = sort(unique(slope)))),
     resp  = if_else((slope > 0 & acc == 1) | (slope < 0 & acc == 0), 1L, 0L)
   )
 
 fit_t <- glm(resp ~ level, data = trend, family = binomial)
-pred_t <- tibble(level = seq(1, 8, length.out = 300),
-                 p = predict(fit_t, newdata = tibble(level = seq(1, 8, length.out = 300)), type = "response"))
+pred_t_levels <- seq(1, 8, length.out = 300)
+pred_t <- tibble(
+  level = pred_t_levels,
+  p = predict(fit_t, newdata = tibble(level = pred_t_levels), type = "response")
+)
 
 pts_t <- trend %>% group_by(level) %>% summarise(p = mean(resp), .groups="drop")
 
@@ -30,7 +37,7 @@ ggplot() +
 
 # -------------- Big/Small --------------
 bs <- df %>%
-  filter(blockName == "Big/Small") %>%
+  filter(blockName == "Big/Small", !is.na(acc), !is.na(n), n != 15) %>%
   mutate(
     level = as.numeric(factor(n, levels = sort(unique(n)))),
     resp  = if_else((n > 15 & acc == 1) | (n < 15 & acc == 0), 1L, 0L)
@@ -38,8 +45,10 @@ bs <- df %>%
 
 fit_b <- glm(resp ~ level, data = bs, family = binomial)
 pred_b_levels <- seq(1, 8, length.out = 300)
-pred_b <- tibble(level = pred_b_levels,
-                 p = predict(fit_b, newdata = tibble(level = pred_b_levels), type = "response"))
+pred_b <- tibble(
+  level = pred_b_levels,
+  p = predict(fit_b, newdata = tibble(level = pred_b_levels), type = "response")
+)
 
 pts_b <- bs %>% group_by(level) %>% summarise(p = mean(resp), .groups="drop")
 
