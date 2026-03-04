@@ -53,6 +53,23 @@
             object-fit: contain;
         }
         
+        #reminderText {
+            display: none;
+            position: fixed;
+            top: 50vh;
+            left: 0;
+            width: 100vw;
+            height: 50vh;
+            padding: 20px;
+            box-sizing: border-box;
+            font-size: 18px;
+            line-height: 1.6;
+            text-align: center;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
         #centerLine {
             display: none;
             position: fixed;
@@ -99,6 +116,7 @@
         <div id="trialDisplay">
             <img id="bottomImage" alt="Stimulus">
         </div>
+        <div id="reminderText"></div>
     </div>
 
     <script>
@@ -149,6 +167,7 @@
         let resumeAfterReminder = false;
         let recentResponses = [];
         let stimulusHideTimeout = null;
+        let reminderTextTimeout = null;
         
         // TEMP: set to false to restore numerosity task
         const TREND_ONLY_TEST = false;
@@ -239,6 +258,29 @@
             return block.categoryField === 'trend_category' ? 'Trend Judgement Task' : 'Numerosity Task';
         }
         
+        function hideReminderText() {
+            if (reminderTextTimeout) {
+                clearTimeout(reminderTextTimeout);
+                reminderTextTimeout = null;
+            }
+            const el = document.getElementById('reminderText');
+            el.style.display = 'none';
+        }
+        
+        function getReminderText() {
+            const block = BLOCKS[currentBlock];
+            const cond = participantCondition === 1 ? 'condition1' : 'condition2';
+            if (block.categoryField === 'trend_category') {
+                const increasingKey = KEY_MAPPING[cond]['Trend_Up'];
+                const decreasingKey = KEY_MAPPING[cond]['Trend_Down'];
+                return `If the array that just disappeared was:<br>increasing — press ${increasingKey}<br>decreasing — press ${decreasingKey}`;
+            } else {
+                const moreKey = KEY_MAPPING[cond]['Big'];
+                const fewerKey = KEY_MAPPING[cond]['Small'];
+                return `If the array that just disappeared was:<br>more dots — press ${moreKey}<br>fewer dots — press ${fewerKey}`;
+            }
+        }
+        
         function getBlockInstructions(justAsBefore) {
             const block = BLOCKS[currentBlock];
             const cond = participantCondition === 1 ? 'condition1' : 'condition2';
@@ -258,6 +300,7 @@
         function showReminder() {
             resumeAfterReminder = true;
             document.getElementById('trialDisplay').style.display = 'none';
+            hideReminderText();
             document.getElementById('neutralDisplay').style.display = 'none';
             document.getElementById('instructionText').innerHTML = `
                 <p>Remember</p>
@@ -304,6 +347,7 @@
                 clearTimeout(stimulusHideTimeout);
                 stimulusHideTimeout = null;
             }
+            hideReminderText();
             if (trialsPool.length === 0) {
                 setTimeout(() => {
                     currentBlock++;
@@ -313,6 +357,7 @@
                     }
                     currentPart++;
                     document.getElementById('trialDisplay').style.display = 'none';
+                    hideReminderText();
                     showPartScreen();
                 }, 500);
                 return;
@@ -342,6 +387,11 @@
                     stimulusHideTimeout = setTimeout(() => {
                         stimulusHideTimeout = null;
                         document.getElementById('trialDisplay').style.display = 'none';
+                        reminderTextTimeout = setTimeout(() => {
+                            reminderTextTimeout = null;
+                            document.getElementById('reminderText').innerHTML = getReminderText();
+                            document.getElementById('reminderText').style.display = 'flex';
+                        }, 250);
                     }, STIMULUS_DURATION_MS);
                 }
             }
@@ -362,11 +412,13 @@
             currentPart++;
             resumeAfterBreak = true;
             document.getElementById('trialDisplay').style.display = 'none';
+            hideReminderText();
             showPartScreen();
         }
         
         function showCompletion() {
             document.getElementById('trialDisplay').style.display = 'none';
+            hideReminderText();
             document.getElementById('neutralDisplay').style.display = 'none';
             document.getElementById('instructions').style.display = 'block';
             document.getElementById('centerLine').style.display = 'none';
@@ -479,6 +531,7 @@
                 clearTimeout(stimulusHideTimeout);
                 stimulusHideTimeout = null;
             }
+            hideReminderText();
             document.getElementById('trialDisplay').style.display = 'none';
             isIntertrialInterval = true;
             
