@@ -171,9 +171,6 @@
             BLOCKS = [BLOCKS_ORIGINAL[1], BLOCKS_ORIGINAL[0]];
         }
         
-        // Split manifest into two halves for each block
-        let blockPools = [];
-        
         async function loadManifest() {
             try {
                 const response = await fetch('stimuli/manifest.csv', { cache: 'no-store' });
@@ -207,11 +204,6 @@
                 });
                 const neutralPreload = new Image();
                 neutralPreload.src = NEUTRAL_PATH;
-                
-                // Shuffle and split into two equal pools of 256
-                const shuffled = shuffleArray(manifest);
-                const half = Math.floor(shuffled.length / 2);
-                blockPools = [shuffled.slice(0, half), shuffled.slice(half)];
                 
                 showPartScreen();
             } catch (error) {
@@ -291,7 +283,7 @@
         }
         
         function startBlock() {
-            trialsPool = [...blockPools[currentBlock]];
+            trialsPool = shuffleArray([...manifest]);
             currentTrialIndex = 0;
             recentResponses = [];
             currentPhase = 'main';
@@ -487,7 +479,7 @@
             isIntertrialInterval = true;
             
             currentTrialIndex++;
-            const breakAfterTrial = Math.floor(blockPools[currentBlock] ? blockPools[currentBlock].length / 2 : 128);
+            const breakAfterTrial = 128;
             
             // Check if 3 wrong out of last 6 — show reminder (takes priority over break)
             let needsReminder = false;
