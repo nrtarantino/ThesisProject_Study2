@@ -20,7 +20,7 @@ Y_MAX = 1.27
 DOT_DIAMETER_PX = round(2 * math.sqrt((DOT_RADIUS * 2) / math.pi) * (DPI / 72))
 
 # Fully crossed design: 8 slopes × 8 n values
-SLOPES = [-0.7, -0.5, -0.3, -0.1, 0.1, 0.3, 0.5, 0.7]
+SLOPES = [-0.577, -0.414, -0.268, -0.132, 0.132, 0.268, 0.414, 0.577]
 N_VALUES = [8, 10, 12, 14, 16, 18, 20, 22]
 VERSIONS_PER_COMBO = 8
 
@@ -131,11 +131,18 @@ def main(no_neutral=False, neutral_only=False):
                         base_dir
                     )
                     
+                    x_arr = np.array(x_values)
+                    y_arr = np.array(y_values)
+                    nn = len(x_arr)
+                    observed_slope = (nn * np.sum(x_arr * y_arr) - np.sum(x_arr) * np.sum(y_arr)) / \
+                                     (nn * np.sum(x_arr**2) - np.sum(x_arr)**2) if nn > 1 else slope
+                    
                     manifest.append({
                         'index': global_index,
                         'filename': filename,
                         'path': filename,
                         'slope': slope,
+                        'observed_slope': round(observed_slope, 6),
                         'n': n,
                         'sigma': sigma,
                         'version': version,
