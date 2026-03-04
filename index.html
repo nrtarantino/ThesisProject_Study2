@@ -111,6 +111,12 @@
             display: block;
         }
         
+        .breakTitle {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
         #overviewScreen {
             display: none;
             flex-direction: column;
@@ -405,10 +411,14 @@
         
         function getOverviewText() {
             const block = BLOCKS[currentBlock];
+            const isFirstTask = currentBlock === 0;
+            const breakNote = isFirstTask
+                ? ' There will be a break in the middle of this task, and then you will complete a similar task. Each task will take 5-7 minutes.'
+                : ' This is the final task which will take 5-7 minutes in total with a break in the middle.';
             if (block.categoryField === 'trend_category') {
-                return `In this part of the study you will be judging the trend of dots in an array. A dot array will appear in the bottom of the screen where the green square is for a short time and you will use the P and Q keys to indicate if it has an increasing or decreasing trend compared to the dot array that will be displayed above it where the red square is.`;
+                return `In this part of the study you will be judging the trend of dots in an array. A dot array will appear in the bottom of the screen where the green square is for a short time and you will use the P and Q keys to indicate if it has an increasing or decreasing trend compared to the dot array that will be displayed above it where the red square is.${breakNote}`;
             } else {
-                return `In this part of the study you will be judging the number of dots in an array. A dot array will appear in the bottom of the screen where the green square is for a short time and you will use the P and Q keys to indicate if it has more or less dots compared to the dot array that will be displayed above it where the red square is.`;
+                return `In this part of the study you will be judging the number of dots in an array. A dot array will appear in the bottom of the screen where the green square is for a short time and you will use the P and Q keys to indicate if it has more or less dots compared to the dot array that will be displayed above it where the red square is.${breakNote}`;
             }
         }
         
@@ -434,7 +444,12 @@
             const partNum = ((currentPart - 1) % 2) + 1;
             const isPart2 = (currentPart === 2 || currentPart === 4);
             const instrText = getBlockInstructions(isPart2);
+            const breakContent = isPart2 ? `
+                <p class="breakTitle">Break</p>
+                <p>Feel free to take a break. The second part of this task is the same as the last.</p>
+            ` : '';
             document.getElementById('instructionText').innerHTML = `
+                ${breakContent}
                 <p>Task ${taskNum} of 2, Part ${partNum} of 2</p>
                 <p>${instrText}</p>
             `;
