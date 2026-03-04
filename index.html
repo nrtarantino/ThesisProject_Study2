@@ -121,6 +121,12 @@
             line-height: 1.6;
         }
         
+        #overviewTaskTitle {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        
         #overviewPlaceholders {
             display: flex;
             flex-direction: column;
@@ -130,14 +136,42 @@
             border: 2px solid #444;
         }
         
-        #overviewRedSquare {
-            height: 120px;
-            background-color: #c00;
+        .overviewZone {
+            height: 100px;
+            background-color: #333;
+            position: relative;
         }
         
-        #overviewGreenSquare {
-            height: 120px;
-            background-color: #0a0;
+        .overviewArrow {
+            position: absolute;
+            width: 0;
+            height: 0;
+        }
+        
+        .overviewArrowRed {
+            left: 50%;
+            top: -18px;
+            transform: translateX(-50%);
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 24px solid #c00;
+        }
+        
+        .overviewArrowGreen {
+            left: 50%;
+            bottom: -18px;
+            transform: translateX(-50%);
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 24px solid #0a0;
+        }
+        
+        #overviewTopZone {
+            position: relative;
+        }
+        
+        #overviewBottomZone {
+            position: relative;
         }
     </style>
 </head>
@@ -149,10 +183,15 @@
         </div>
         
         <div id="overviewScreen">
+            <p id="overviewTaskTitle"></p>
             <p id="overviewText"></p>
             <div id="overviewPlaceholders">
-                <div id="overviewRedSquare"></div>
-                <div id="overviewGreenSquare"></div>
+                <div id="overviewTopZone" class="overviewZone">
+                    <div class="overviewArrow overviewArrowRed"></div>
+                </div>
+                <div id="overviewBottomZone" class="overviewZone">
+                    <div class="overviewArrow overviewArrowGreen"></div>
+                </div>
             </div>
             <button id="continueButton" class="button">Continue</button>
         </div>
@@ -371,6 +410,8 @@
         }
         
         function showOverviewScreen() {
+            const taskNum = currentBlock + 1;
+            document.getElementById('overviewTaskTitle').textContent = `Task ${taskNum}`;
             document.getElementById('overviewText').textContent = getOverviewText();
             document.getElementById('overviewScreen').style.display = 'flex';
             document.getElementById('instructions').style.display = 'none';
@@ -387,7 +428,6 @@
             const isPart2 = (currentPart === 2 || currentPart === 4);
             const instrText = getBlockInstructions(isPart2);
             document.getElementById('instructionText').innerHTML = `
-                <p class="taskName"><strong>${getTaskName()}</strong></p>
                 <p>Task ${taskNum} of 2, Part ${partNum} of 2</p>
                 <p>${instrText}</p>
             `;
