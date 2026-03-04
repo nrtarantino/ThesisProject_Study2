@@ -279,11 +279,11 @@
             if (block.categoryField === 'trend_category') {
                 const increasingKey = KEY_MAPPING[cond]['Trend_Up'];
                 const decreasingKey = KEY_MAPPING[cond]['Trend_Down'];
-                return `If the array that just disappeared had:<br>An <strong>increasing</strong> trend compared to the array above — <strong>press ${increasingKey}</strong><br>A <strong>decreasing</strong> trend compared to the array above — <strong>press ${decreasingKey}</strong>`;
+                return `Compared to the array above, did the array that just disappeared have an:<br><strong>Increasing</strong> trend? <strong>Press ${increasingKey}</strong><br><strong>Decreasing</strong> trend? <strong>Press ${decreasingKey}</strong>`;
             } else {
                 const moreKey = KEY_MAPPING[cond]['Big'];
                 const fewerKey = KEY_MAPPING[cond]['Small'];
-                return `If the array that just disappeared had:<br><strong>More</strong> dots compared to the array above — <strong>press ${moreKey}</strong><br><strong>Less</strong> dots compared to the array above — <strong>press ${fewerKey}</strong>`;
+                return `Compared to the array above, did the array that just disappeared have:<br><strong>More</strong> dots? <strong>Press ${moreKey}</strong><br><strong>Fewer</strong> dots? <strong>Press ${fewerKey}</strong>`;
             }
         }
         
