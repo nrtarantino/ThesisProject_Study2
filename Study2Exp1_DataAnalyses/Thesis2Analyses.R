@@ -1,6 +1,6 @@
 library(tidyverse)
 
-df <- study2_R_1Ej3mSVyyo6TIbk %>%
+df <- df %>%
   mutate(
     slope = as.numeric(as.character(slope)),
     n     = as.numeric(as.character(n)),

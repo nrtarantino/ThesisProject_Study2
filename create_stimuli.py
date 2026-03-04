@@ -37,6 +37,7 @@ def generate_data(n, alpha, sigma):
     """Generate scatterplot data matching your HTML algorithm"""
     valid = False
     x, y = None, None
+    out_of_bounds_retries = 0
     
     while not valid:
         # Generate equally spaced x values from 0 to 1
@@ -54,8 +55,10 @@ def generate_data(n, alpha, sigma):
         # Check if all points are within the visible axis range
         if np.all((y >= Y_MIN) & (y <= Y_MAX)) and np.all((x >= X_MIN) & (x <= X_MAX)):
             valid = True
+        else:
+            out_of_bounds_retries += 1
     
-    return x, y
+    return x, y, out_of_bounds_retries
 
 def to_canvas_x(normalized_x):
     """Convert normalized x to canvas x"""
@@ -67,10 +70,35 @@ def to_canvas_y(normalized_y):
     normalized = (normalized_y - Y_MIN) / (Y_MAX - Y_MIN)
     return MARGIN + (1 - normalized) * PLOT_SIZE
 
+def _observed_slope(x_values, y_values, fallback=0):
+    """Compute OLS slope; return fallback if undefined"""
+    x_arr = np.array(x_values)
+    y_arr = np.array(y_values)
+    nn = len(x_arr)
+    if nn <= 1:
+        return fallback
+    num = nn * np.sum(x_arr * y_arr) - np.sum(x_arr) * np.sum(y_arr)
+    den = nn * np.sum(x_arr**2) - np.sum(x_arr)**2
+    return num / den if den != 0 else fallback
+
 def generate_and_save_stimulus(stimulus_name, index, output_dir):
     """Generate a single stimulus and save it"""
-    # Generate data
-    x_norm, y_norm = generate_data(index['n'], index['slope'], index['sigma'])
+    slope = index['slope']
+    total_out_of_bounds = 0
+    sign_mismatch_retries = 0
+    
+    while True:
+        x_norm, y_norm, out_of_bounds_retries = generate_data(index['n'], slope, index['sigma'])
+        total_out_of_bounds += out_of_bounds_retries
+        
+        # Regenerate if observed slope has wrong sign (skip when target slope is 0)
+        if slope != 0:
+            obs = _observed_slope(x_norm, y_norm, fallback=slope)
+            if np.sign(obs) != np.sign(slope):
+                sign_mismatch_retries += 1
+                continue
+        
+        break
     
     # Convert to canvas coordinates
     x_canvas = [to_canvas_x(xi) for xi in x_norm]
@@ -99,7 +127,7 @@ def generate_and_save_stimulus(stimulus_name, index, output_dir):
     plt.savefig(filepath, facecolor='#1a1a1a', bbox_inches='tight', pad_inches=0)
     plt.close()
     
-    return filepath, filename, x_norm, y_norm
+    return filepath, filename, x_norm, y_norm, total_out_of_bounds, sign_mismatch_retries
 
 def main(no_neutral=False, neutral_only=False):
     # Use script directory so manifest/stimuli always land in project folder
@@ -121,7 +149,7 @@ def main(no_neutral=False, neutral_only=False):
                     trend_category = 'Trend_Up' if slope > 0 else 'Trend_Down'
                     size_category = 'Big' if n >= 16 else 'Small'
                     
-                    filepath, filename, x_values, y_values = generate_and_save_stimulus(
+                    filepath, filename, x_values, y_values, out_of_bounds_retries, sign_mismatch_retries = generate_and_save_stimulus(
                         f"stim",
                         {
                             'index': global_index,
@@ -132,11 +160,7 @@ def main(no_neutral=False, neutral_only=False):
                         base_dir
                     )
                     
-                    x_arr = np.array(x_values)
-                    y_arr = np.array(y_values)
-                    nn = len(x_arr)
-                    observed_slope = (nn * np.sum(x_arr * y_arr) - np.sum(x_arr) * np.sum(y_arr)) / \
-                                     (nn * np.sum(x_arr**2) - np.sum(x_arr)**2) if nn > 1 else slope
+                    observed_slope = _observed_slope(x_values, y_values, fallback=slope)
                     
                     manifest.append({
                         'index': global_index,
@@ -150,6 +174,8 @@ def main(no_neutral=False, neutral_only=False):
                         'trend_category': trend_category,
                         'size_category': size_category,
                         'dot_size_px': DOT_DIAMETER_PX,
+                        'out_of_bounds_retries': out_of_bounds_retries,
+                        'sign_mismatch_retries': sign_mismatch_retries,
                         'x_values': ','.join([f'{x:.6f}' for x in x_values]),
                         'y_values': ','.join([f'{y:.6f}' for y in y_values])
                     })
@@ -178,7 +204,7 @@ def main(no_neutral=False, neutral_only=False):
     neutral_manifest = []
     
     for i in range(20):
-        x_norm, y_norm = generate_data(15, 0, sigma)
+        x_norm, y_norm, out_of_bounds_retries = generate_data(15, 0, sigma)
         
         # Calculate observed regression slope from the generated points
         x_arr = np.array(x_norm)
@@ -213,6 +239,7 @@ def main(no_neutral=False, neutral_only=False):
             'n': 15,
             'sigma': sigma,
             'dot_size_px': DOT_DIAMETER_PX,
+            'out_of_bounds_retries': out_of_bounds_retries,
             'x_values': ','.join([f'{x:.6f}' for x in x_norm]),
             'y_values': ','.join([f'{y:.6f}' for y in y_norm])
         })
