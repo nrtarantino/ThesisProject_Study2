@@ -150,6 +150,8 @@
         let recentResponses = [];
         let stimulusHideTimeout = null;
         
+        // TEMP: set to false to restore numerosity task
+        const TREND_ONLY_TEST = true;
         const BLOCKS_ORIGINAL = [
             { name: 'Trend', categoryField: 'trend_category' },
             { name: 'Big/Small', categoryField: 'size_category' }
@@ -165,7 +167,9 @@
         }
         
         let BLOCKS;
-        if (blockOrder === 1) {
+        if (TREND_ONLY_TEST) {
+            BLOCKS = [{ name: 'Trend', categoryField: 'trend_category' }];
+        } else if (blockOrder === 1) {
             BLOCKS = [...BLOCKS_ORIGINAL];
         } else {
             BLOCKS = [BLOCKS_ORIGINAL[1], BLOCKS_ORIGINAL[0]];
