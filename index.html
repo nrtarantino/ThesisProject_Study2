@@ -70,6 +70,12 @@
             align-items: center;
         }
         
+        #reminderText .reminderContent {
+            max-width: min(1100px, 95vw);
+            text-align: center;
+            margin: 0 auto;
+        }
+        
         #centerLine {
             display: none;
             position: fixed;
@@ -389,7 +395,7 @@
                         document.getElementById('trialDisplay').style.display = 'none';
                         reminderTextTimeout = setTimeout(() => {
                             reminderTextTimeout = null;
-                            document.getElementById('reminderText').innerHTML = getReminderText();
+                            document.getElementById('reminderText').innerHTML = '<div class="reminderContent">' + getReminderText() + '</div>';
                             document.getElementById('reminderText').style.display = 'flex';
                         }, 250);
                     }, STIMULUS_DURATION_MS);
