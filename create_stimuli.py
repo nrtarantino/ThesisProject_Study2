@@ -20,9 +20,9 @@ Y_MAX = 1.27
 DOT_DIAMETER_PX = round(2 * math.sqrt((DOT_RADIUS * 2) / math.pi) * (DPI / 72))
 
 # Fully crossed design: 8 slopes × 8 n values
-SLOPES = [-0.577, -0.414, -0.268, -0.132, 0.132, 0.268, 0.414, 0.577]
+SLOPES = [-0.625, -0.445, -0.287, -0.141, 0.141, 0.287, 0.445, 0.625]
 N_VALUES = [8, 10, 12, 14, 16, 18, 20, 22]
-VERSIONS_PER_COMBO = 8
+VERSIONS_PER_COMBO = 4  # 8 slopes × 8 n values × 4 versions = 256 stimuli
 
 def random_normal(mean=0, std_dev=1):
     """Box-Muller transform for normal distribution"""
@@ -102,10 +102,11 @@ def generate_and_save_stimulus(stimulus_name, index, output_dir):
     return filepath, filename, x_norm, y_norm
 
 def main(no_neutral=False, neutral_only=False):
-    base_dir = Path('stimuli')
+    # Use script directory so manifest/stimuli always land in project folder
+    base_dir = Path(__file__).parent / 'stimuli'
     base_dir.mkdir(exist_ok=True)
     
-    sigma = 0.15
+    sigma = 0.125
     
     if not neutral_only:
         total = len(SLOPES) * len(N_VALUES) * VERSIONS_PER_COMBO  # 8 × 8 × 2 = 128
