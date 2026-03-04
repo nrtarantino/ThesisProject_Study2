@@ -106,7 +106,7 @@ def main(no_neutral=False, neutral_only=False):
     base_dir = Path(__file__).parent / 'stimuli'
     base_dir.mkdir(exist_ok=True)
     
-    sigma = 0.125
+    sigma = 0.15
     
     if not neutral_only:
         total = len(SLOPES) * len(N_VALUES) * VERSIONS_PER_COMBO  # 8 × 8 × 2 = 128
