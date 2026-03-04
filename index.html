@@ -127,31 +127,27 @@
             margin-bottom: 20px;
         }
         
-        #overviewRedArrow {
+        #overviewRedSquare {
             display: none;
             position: fixed;
-            left: 50%;
-            top: 20vh;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 30px solid transparent;
-            border-right: 30px solid transparent;
-            border-bottom: 40px solid #c00;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 50vh;
+            background-color: #c00;
+            opacity: 0.4;
             z-index: 20;
         }
         
-        #overviewGreenArrow {
+        #overviewGreenSquare {
             display: none;
             position: fixed;
-            left: 50%;
-            bottom: 20vh;
-            transform: translateX(-50%);
-            width: 0;
-            height: 0;
-            border-left: 30px solid transparent;
-            border-right: 30px solid transparent;
-            border-top: 40px solid #0a0;
+            top: 50vh;
+            left: 0;
+            width: 100vw;
+            height: 50vh;
+            background-color: #0a0;
+            opacity: 0.4;
             z-index: 20;
         }
     </style>
@@ -166,8 +162,8 @@
         <div id="overviewScreen">
             <p id="overviewTaskTitle"></p>
             <p id="overviewText"></p>
-            <div id="overviewRedArrow"></div>
-            <div id="overviewGreenArrow"></div>
+            <div id="overviewRedSquare"></div>
+            <div id="overviewGreenSquare"></div>
             <button id="continueButton" class="button">Continue</button>
         </div>
         
@@ -363,8 +359,8 @@
             resumeAfterReminder = true;
             document.getElementById('trialDisplay').style.display = 'none';
             document.getElementById('overviewScreen').style.display = 'none';
-            document.getElementById('overviewRedArrow').style.display = 'none';
-            document.getElementById('overviewGreenArrow').style.display = 'none';
+            document.getElementById('overviewRedSquare').style.display = 'none';
+            document.getElementById('overviewGreenSquare').style.display = 'none';
             hideReminderText();
             document.getElementById('neutralDisplay').style.display = 'none';
             document.getElementById('instructionText').innerHTML = `
@@ -391,8 +387,8 @@
             document.getElementById('overviewTaskTitle').textContent = `Task ${taskNum}`;
             document.getElementById('overviewText').textContent = getOverviewText();
             document.getElementById('overviewScreen').style.display = 'flex';
-            document.getElementById('overviewRedArrow').style.display = 'block';
-            document.getElementById('overviewGreenArrow').style.display = 'block';
+            document.getElementById('overviewRedSquare').style.display = 'block';
+            document.getElementById('overviewGreenSquare').style.display = 'block';
             document.getElementById('instructions').style.display = 'none';
             document.getElementById('startButton').style.display = 'none';
             document.getElementById('continueButton').style.display = 'block';
@@ -401,8 +397,8 @@
         
         function showPartScreen() {
             document.getElementById('overviewScreen').style.display = 'none';
-            document.getElementById('overviewRedArrow').style.display = 'none';
-            document.getElementById('overviewGreenArrow').style.display = 'none';
+            document.getElementById('overviewRedSquare').style.display = 'none';
+            document.getElementById('overviewGreenSquare').style.display = 'none';
             document.getElementById('continueButton').style.display = 'none';
             const taskNum = Math.ceil(currentPart / 2);
             const partNum = ((currentPart - 1) % 2) + 1;
@@ -507,8 +503,8 @@
             resumeAfterBreak = true;
             document.getElementById('trialDisplay').style.display = 'none';
             document.getElementById('overviewScreen').style.display = 'none';
-            document.getElementById('overviewRedArrow').style.display = 'none';
-            document.getElementById('overviewGreenArrow').style.display = 'none';
+            document.getElementById('overviewRedSquare').style.display = 'none';
+            document.getElementById('overviewGreenSquare').style.display = 'none';
             hideReminderText();
             showPartScreen();
         }
@@ -516,8 +512,8 @@
         function showCompletion() {
             document.getElementById('trialDisplay').style.display = 'none';
             document.getElementById('overviewScreen').style.display = 'none';
-            document.getElementById('overviewRedArrow').style.display = 'none';
-            document.getElementById('overviewGreenArrow').style.display = 'none';
+            document.getElementById('overviewRedSquare').style.display = 'none';
+            document.getElementById('overviewGreenSquare').style.display = 'none';
             hideReminderText();
             document.getElementById('neutralDisplay').style.display = 'none';
             document.getElementById('instructions').style.display = 'block';
