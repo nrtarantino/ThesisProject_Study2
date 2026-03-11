@@ -1,0 +1,159 @@
+StartDate,EndDate,Status,IPAddress,Progress,Duration (in seconds),Finished,RecordedDate,ResponseId,RecipientLastName,RecipientFirstName,RecipientEmail,ExternalReference,LocationLatitude,LocationLongitude,DistributionChannel,UserLanguage,Q1,Q24,Q25,Q26,Q2,Q2_7_TEXT,Q3,Q4,Q4_1_TEXT,Q4_2_TEXT,Q5,Q6,Q7,Q8,Q8_5_TEXT,Q9,Q10,Q10_7_TEXT,Q11,Q12,Q13,C,Create New Field or Choose From Dropdown...,id
+Start Date,End Date,Response Type,IP Address,Progress,Duration (in seconds),Finished,Recorded Date,Response ID,Recipient Last Name,Recipient First Name,Recipient Email,External Data Reference,Location Latitude,Location Longitude,Distribution Channel,User Language,"University of Wisconsin - Madison
+
+Research Participant Information and Consent Form
+
+ 
+                
+
+Study Title: Dot Array Categorization Study
+
+Principal Investigator: Martha Alibali (Phone: (608) 262-0837) (Email: mwalibali@wisc.edu)
+
+Student Researcher: Nick Tarantino
+
+                
+
+Description of the research
+
+You are invited to participate in a research study about people's perception of dot arrays.
+
+
+
+You have been asked to participate because you are a student over the age of 18 who is taking a course at UW-Madison.
+
+
+
+The purpose of the research is to better understand the mechanisms by which people perceive information from sets of objects.
+
+
+
+This study will include undergraduates from the University of Wisconsin-Madison in the SONA subject pool.
+
+
+
+Please complete the survey in a private setting. You must complete the survey in one sitting.
+
+                
+
+What will my participation involve?
+
+If you agree to participate, you will complete a single 30-minute session with a series of tasks.
+First, you will complete a task in which you will learn to categorize sets of dots using the keys on
+your keyboard and through receiving feedback. Then, you will complete a questionnaire in
+which you will be asked about your education in math and demographic information. 
+
+
+
+Your participation will last approximately 30 minutes and will require 1 session.
+
+                
+
+Are there any risks to me?
+
+There is a small possibility of breach of confidentiality until your ID from SONA is deleted from the data and replaced with a researcher-generated code.
+
+                
+
+Are there any benefits to me?
+
+There are no direct benefits to you, although you may benefit from engaging in activities related to visual perception. 
+
+                
+
+Will I be compensated for my participation?
+
+You will receive 1 extra credit point for participating in this study.
+
+                
+
+How will my confidentiality be protected?
+
+This study is confidential. Neither your name or any other identifiable information will be published.
+
+
+
+There may be publications as a result of this study, but your name will not be used. In all data analyses and reports of this research, you will be identified only by a code number.
+
+
+
+Coded research data may be shared with other researchers; however, no identifying information will be shared. The data will be stored in a secure server and will be stored for at least seven years beyond the completion of the study.
+
+
+
+The survey is hosted by the Qualtrics system and involves a secure connection. Terms of Service, addressing confidentiality, may be viewed at http://www.qualtrics.com/acceptable-use-statement.
+
+                
+
+Whom should I contact if I have questions?
+
+You may ask any questions about the research at any time. If you have questions, concerns, or complaints, or think that participating in the research has hurt you, talk to the research team or contact the Principal Investigator Martha Alibali at (608) 262-0837.
+
+                
+
+If you have concerns about your rights as a research participant or have complaints about the research study or study team, call the confidential research compliance line at 1-833-652-2506. UW Staff not part of the study team will work with you to address concerns and assist in resolving any complaints.
+
+                
+
+If you decide not to participate or to withdraw from the study, you may do so without penalty.
+
+                
+
+If you want a copy of this consent for your records, please print this page from your web browser now.
+
+ 
+
+If you wish to participate, please select the first option, indicating that you have read the information provided on this page and click the Next button below to begin the survey. 
+
+ 
+
+Sincerely,
+
+Dr. Martha Alibali
+
+University of Wisconsin-Madison",Is your vision normal or corrected to normal?,Are you wearing corrective lenses such as contacts or glasses?,"If you have access to them, can you please wear your corrective lenses?",Highest level of math completed (check one) - Selected Choice,Highest level of math completed (check one) - Other: - Text,When was the last time you took a math course?,"What was your score on the math section of the ACT/SAT? If you took both, choose your best score. - Selected Choice","What was your score on the math section of the ACT/SAT? If you took both, choose your best score. - ACT: - Text","What was your score on the math section of the ACT/SAT? If you took both, choose your best score. - SAT: - Text",Was the number you entered above your,"Year in college (e.g., 1st, 2nd, etc.)",GPA,Gender - Selected Choice,Gender - Other - Text,"Age in years and months (e.g., 18 years, 7 months)",What is your race/ethnicity? (Please check all that apply) - Selected Choice,What is your race/ethnicity? (Please check all that apply) - Other: - Text,What language(s) did you first learn to speak as a child?,Country in which you attended elementary school?,Country in which you attended secondary school?,C,Create New Field or Choose From Dropdown...,id
+"{""ImportId"":""startDate"",""timeZone"":""America/Denver""}","{""ImportId"":""endDate"",""timeZone"":""America/Denver""}","{""ImportId"":""status""}","{""ImportId"":""ipAddress""}","{""ImportId"":""progress""}","{""ImportId"":""duration""}","{""ImportId"":""finished""}","{""ImportId"":""recordedDate"",""timeZone"":""America/Denver""}","{""ImportId"":""_recordId""}","{""ImportId"":""recipientLastName""}","{""ImportId"":""recipientFirstName""}","{""ImportId"":""recipientEmail""}","{""ImportId"":""externalDataReference""}","{""ImportId"":""locationLatitude""}","{""ImportId"":""locationLongitude""}","{""ImportId"":""distributionChannel""}","{""ImportId"":""userLanguage""}","{""ImportId"":""QID1322230992""}","{""ImportId"":""QID11""}","{""ImportId"":""QID12""}","{""ImportId"":""QID13""}","{""ImportId"":""QID1322230970""}","{""ImportId"":""QID1322230970_7_TEXT""}","{""ImportId"":""QID1322230971""}","{""ImportId"":""QID1322230972""}","{""ImportId"":""QID1322230972_1_TEXT""}","{""ImportId"":""QID1322230972_2_TEXT""}","{""ImportId"":""QID1322230973""}","{""ImportId"":""QID1322230974_TEXT""}","{""ImportId"":""QID1322230975_TEXT""}","{""ImportId"":""QID1322230976""}","{""ImportId"":""QID1322230976_5_TEXT""}","{""ImportId"":""QID1322230977_TEXT""}","{""ImportId"":""QID1322230978""}","{""ImportId"":""QID1322230978_7_TEXT""}","{""ImportId"":""QID1322230979_TEXT""}","{""ImportId"":""QID1322230980_TEXT""}","{""ImportId"":""QID1322230981_TEXT""}","{""ImportId"":""C""}","{""ImportId"":""Create New Field or Choose From Dropdown...""}","{""ImportId"":""id""}"
+2026-02-14 16:07:28,2026-02-14 16:17:02,IP Address,35.151.111.18,100,573,True,2026-02-14 16:17:02,R_6Nk8kbT12OvmgCX,,,,,43.1205,-89.3523,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,2 semesters of calculus,,Last semester,,,,,,,,,,,,,,,,,
+2026-02-14 13:03:33,2026-02-14 13:03:40,IP Address,96.40.235.24,26,6,False,2026-02-21 13:03:44,R_5hz5foP9tJctV5x,,,,,42.4235,-88.6029,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,,,
+2026-02-14 13:07:12,2026-02-14 13:07:18,IP Address,96.40.235.24,26,6,False,2026-02-21 13:07:20,R_1XdtTf2Ui0qP2kF,,,,,42.4235,-88.6029,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,,,
+2026-02-14 13:12:48,2026-02-14 13:13:03,IP Address,96.40.235.24,26,14,False,2026-02-21 13:13:06,R_5R5L3MUv0uyr0Dn,,,,,42.4235,-88.6029,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,,,
+2026-02-14 13:24:54,2026-02-14 13:25:01,IP Address,96.40.235.24,26,6,False,2026-02-21 13:25:01,R_3G95RVtxT1iGDRL,,,,,42.4235,-88.6029,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,,,
+2026-02-14 13:49:25,2026-02-14 13:49:32,IP Address,96.40.235.24,26,7,False,2026-02-21 13:49:35,R_3inja5qDLUIosUt,,,,,42.4235,-88.6029,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,,,
+2026-03-02 08:46:49,2026-03-02 08:58:12,IP Address,35.151.111.18,100,683,True,2026-03-02 08:58:13,R_1Ej3mSVyyo6TIbk,,,,,43.1205,-89.3523,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,Beyond 2 semesters of calculus,,,,,,,,,,,,,,,,,1,Custom Value,123
+2026-02-20 20:24:08,2026-02-24 23:23:14,IP Address,35.151.111.18,26,356345,False,2026-03-03 23:23:18,R_3pQqszE3xcjEhqp,,,,,43.1205,-89.3523,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,,,90866
+2026-02-24 23:29:59,2026-02-24 23:30:10,IP Address,35.151.111.18,26,10,False,2026-03-03 23:30:13,R_3ELU3MhBb8KPxda,,,,,43.1205,-89.3523,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,,,9086
+2026-02-24 23:30:39,2026-02-24 23:30:48,IP Address,35.151.111.18,26,9,False,2026-03-03 23:30:50,R_3zlzcp4wswCCDbr,,,,,43.1205,-89.3523,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,4,,908
+2026-02-24 23:33:44,2026-02-24 23:33:49,IP Address,35.151.111.18,26,5,False,2026-03-03 23:33:54,R_6gZcKGGCnRXUMfA,,,,,43.1205,-89.3523,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,3,,9
+2026-02-24 23:34:02,2026-02-24 23:34:08,IP Address,35.151.111.18,26,5,False,2026-03-03 23:34:09,R_5CkA86I63O82Idr,,,,,43.1205,-89.3523,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,1,,956
+2026-02-24 23:34:17,2026-02-24 23:34:23,IP Address,35.151.111.18,26,5,False,2026-03-03 23:34:23,R_7h7vtZGg9YcTlXH,,,,,43.1205,-89.3523,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,2,,95
+2026-02-24 23:34:33,2026-02-24 23:34:38,IP Address,35.151.111.18,26,5,False,2026-03-03 23:34:41,R_3ebHjRTYSjzAdG1,,,,,43.1205,-89.3523,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,2,,95564
+2026-02-24 23:34:49,2026-02-24 23:34:54,IP Address,35.151.111.18,26,5,False,2026-03-03 23:34:59,R_3sZ6k2wwuqlaKHL,,,,,43.1205,-89.3523,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,2,,955643
+2026-02-24 23:35:01,2026-02-24 23:35:08,IP Address,35.151.111.18,26,7,False,2026-03-03 23:35:12,R_3gpY06Pl3xaueeB,,,,,43.1205,-89.3523,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,3,,95564334
+2026-02-24 23:35:14,2026-02-24 23:35:20,IP Address,35.151.111.18,26,6,False,2026-03-03 23:35:21,R_5RqflVRe8WxCkHT,,,,,43.1205,-89.3523,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,3,,9556433445
+2026-02-24 23:35:30,2026-02-24 23:35:35,IP Address,35.151.111.18,26,5,False,2026-03-03 23:35:37,R_7pg3xVGohyalqUq,,,,,43.1205,-89.3523,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,3,,95564334453
+2026-02-24 23:38:39,2026-02-24 23:38:44,IP Address,35.151.111.18,26,5,False,2026-03-03 23:38:44,R_77eeNUOQk5ZAGg7,,,,,43.1205,-89.3523,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,4,,955643344532
+2026-02-24 23:38:50,2026-02-24 23:38:56,IP Address,35.151.111.18,26,5,False,2026-03-03 23:38:57,R_73DVYbFkUgJ9XgZ,,,,,43.1205,-89.3523,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,3,,9556433445322
+2026-02-25 00:23:48,2026-02-25 00:23:54,IP Address,35.151.111.18,26,6,False,2026-03-04 00:23:55,R_1j8qieKIg0cQxXc,,,,,43.1205,-89.3523,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,2,,90866734
+2026-02-25 00:40:24,2026-02-25 00:44:59,IP Address,35.151.111.18,37,275,False,2026-03-04 00:45:06,R_7HGhcnDAj95iXxY,,,,,43.1205,-89.3523,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,,,,,,,,,,,,,,,,,,1,Custom Value,90869
+2026-03-04 15:58:23,2026-03-04 16:15:45,IP Address,72.33.2.168,100,1042,True,2026-03-04 16:15:45,R_5OPkYpSPHXPgN3d,,,,,43.0725,-89.4491,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Corrected to Normal,No,"No, I do not have access to them right now",Beyond 2 semesters of calculus,,"In college, prior to last semester",SAT:,,600,Exact Score,"2nd ",4.0,Non-binary,,"20years ,3 month",White,,english,"USA ",USA,4,,95859
+2026-03-04 16:48:15,2026-03-04 17:08:40,IP Address,35.148.93.74,100,1224,True,2026-03-04 17:08:40,R_7PsI9mJuhB45000,,,,,43.0812,-89.3838,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,1 semester of calculus,,In high school,ACT:,28,,Approximate Score,2nd,3.4,Female,,"20 years, 2 months",White,,English,USA,USA,1,Custom Value,96360
+2026-03-04 17:02:07,2026-03-04 17:17:02,IP Address,72.33.2.165,100,894,True,2026-03-04 17:17:03,R_3X7jOmhV2x43UXa,,,,,43.0725,-89.4491,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Corrected to Normal,Yes,,2 semesters of calculus,,In high school,ACT:,26,,Exact Score,1st,3.6,Female,,"19 years, 4 months",White,,English,United States,United States,3,,96979
+2026-03-04 17:24:22,2026-03-04 17:38:59,IP Address,52.119.103.130,100,876,True,2026-03-04 17:39:00,R_5aWblKy9uCNiqbM,,,,,34.9803,-81.9168,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,Other:,"Statistics ",Last semester,,,,,"2nd ",3.8,Female,,"19 years, 7 months",White,,"english, french",United States,United States,1,Custom Value,87818
+2026-03-04 18:25:15,2026-03-04 18:39:02,IP Address,72.33.2.154,100,827,True,2026-03-04 18:39:02,R_3e3OTEdKPVZUCOO,,,,,43.0725,-89.4491,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,Pre-calculus,,In high school,,,,,,,,,,Hispanic or Latino,,,,,3,,97368
+2026-03-04 18:52:44,2026-03-04 19:17:59,IP Address,72.33.2.207,100,1515,True,2026-03-04 19:18:00,R_7Ma27OxJzop0uM9,,,,,43.0782,-89.4075,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Corrected to Normal,Yes,,Algebra,,Last semester,SAT:,,1070,Exact Score,1st,3.0,Female,,"19 years, 1 month",Hispanic or Latino,,english,United States,United States,4,,96568
+2026-03-04 19:13:57,2026-03-04 19:30:04,IP Address,72.33.2.196,100,966,True,2026-03-04 19:30:04,R_6qrwO4y8Ip3ArhJ,,,,,43.0782,-89.4075,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Corrected to Normal,Yes,,1 semester of calculus,,Last semester,ACT:,26,,Approximate Score,2nd,3.2,Female,,"20 years, 3 months",White,,English,US,US,2,,96235
+2026-03-04 15:44:42,2026-03-04 19:44:53,IP Address,72.33.2.176,100,14411,True,2026-03-04 19:44:54,R_6a114U5tiMoqcQp,,,,,43.0725,-89.4491,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,Pre-calculus,,Currently enrolled in a math course,ACT:,19,,Approximate Score,1st,3.9,Female,,19,"Hispanic or Latino,White",,english,"united states ","unites states ",3,,97346
+2026-03-04 19:16:09,2026-03-04 19:45:30,IP Address,72.33.2.147,100,1760,True,2026-03-04 19:45:31,R_3sSxoT9MQFL2Oq5,,,,,43.0782,-89.4075,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,1 semester of calculus,,Currently enrolled in a math course,ACT:,21,,Approximate Score,1,3.7,Female,,18 years and 2 months,White,,"english ",usa,usa,3,,96933
+2026-03-04 16:40:46,2026-03-04 19:45:54,IP Address,72.33.2.25,100,11107,True,2026-03-04 19:45:54,R_3iPoJi3D6WePDAR,,,,,43.0725,-89.4491,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Corrected to Normal,Yes,,1 semester of calculus,,Last semester,,,,,1st,,Female,,"18 years, 7 months",Hispanic or Latino,,,,,4,,96990
+2026-03-04 20:18:07,2026-03-04 20:31:18,IP Address,50.93.222.168,100,791,True,2026-03-04 20:31:18,R_7PmRmrXlVBkdr9t,,,,,43.0812,-89.3838,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,Pre-calculus,,Currently enrolled in a math course,ACT:,24,,Approximate Score,3rd,3.9,Female,,"20 years, 11 months",White,,english,usa,usa,1,Custom Value,97565
+2026-03-04 20:53:06,2026-03-04 21:10:08,IP Address,72.33.2.42,100,1021,True,2026-03-04 21:10:08,R_5n3ARcbS5yx4TMB,,,,,43.0782,-89.4075,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,2 semesters of calculus,,In high school,SAT:,,1400,Approximate Score,2nd,3.5,Female,,"19 years, 11 months",White,,English,United States,United States,2,,88323
+2026-03-04 21:04:19,2026-03-04 21:19:03,IP Address,75.196.66.117,100,884,True,2026-03-04 21:19:04,R_3iyFkiPb3S4r7t8,,,,,43.0026,-87.9417,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,2 semesters of calculus,,Currently enrolled in a math course,ACT:,28,,Approximate Score,3rd,4.0,Female,,"21 years, 5 months",White,,English,United States,United States,4,,97550
+2026-03-04 21:23:16,2026-03-04 21:38:43,IP Address,72.33.2.96,100,926,True,2026-03-04 21:38:43,R_3qjRWwvYM7cUb9J,,,,,43.0782,-89.4075,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,2 semesters of calculus,,In high school,ACT:,28,,Approximate Score,1st,3.7,Female,,"19 years 2 months ",White,,English,US,US,1,Custom Value,96635
+2026-03-05 08:49:02,2026-03-05 09:02:11,IP Address,72.33.2.157,100,789,True,2026-03-05 09:02:12,R_3Uk4fbRIevxwbUB,,,,,43.0782,-89.4075,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Corrected to Normal,Yes,,2 semesters of calculus,,In high school,SAT:,,1290,Approximate Score,2,3.88,Female,,"20 years, 4 months",White,,english,USA,USA,1,Custom Value,93554
+2026-03-05 08:44:31,2026-03-05 09:04:13,IP Address,72.33.2.11,100,1181,True,2026-03-05 09:04:14,R_5a90RjTlvtH4O36,,,,,43.0782,-89.4075,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,Other:,Statisitcs,Currently enrolled in a math course,SAT:,,1200,Approximate Score,2nd,3.1,Female,,19 and 11 months,White,,English,United States,United States,4,,88750
+2026-03-05 09:16:44,2026-03-05 09:32:21,IP Address,72.33.2.249,100,937,True,2026-03-05 09:32:22,R_62tCY9d8nYYeKc3,,,,,43.0782,-89.4075,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,Pre-calculus,,Last semester,SAT:,,1350,Exact Score,2nd,3.5,Female,,20,White,,English,USA,USA,4,,91675
+2026-03-05 14:01:18,2026-03-05 14:24:09,IP Address,72.33.2.25,100,1370,True,2026-03-05 14:24:09,R_5WZyFwcw5XixTEd,,,,,43.0782,-89.4075,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,1 semester of calculus,,"In college, prior to last semester",ACT:,28,,Approximate Score,2nd,3.3,Female,,19 years 7 months,White,,English,US,US,2,,91005
+2026-03-07 07:16:49,2026-03-07 07:34:09,IP Address,50.93.221.150,100,1040,True,2026-03-07 07:34:10,R_7atjjmoZTEaUiSl,,,,,43.0812,-89.3838,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Corrected to Normal,Yes,,1 semester of calculus,,"In college, prior to last semester",ACT:,24,,Exact Score,2nd,3.473,Female,,"20 years, 4 months","White,Other:",Egyptian,English,United States,United States,4,,96915
+2026-03-07 18:24:30,2026-03-07 22:31:05,IP Address,50.93.219.136,100,14795,True,2026-03-07 22:31:06,R_7RdPDLylfpp1hHv,,,,,43.0812,-89.3838,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Corrected to Normal,Yes,,1 semester of calculus,,"In college, prior to last semester",ACT:,28,,Approximate Score,3rd,3.4,Female,,"20 years, 10 months ",Asian,,"english ",USA,USA,1,Custom Value,91383
+2026-03-05 10:02:38,2026-03-09 19:27:48,IP Address,72.33.2.141,100,375909,True,2026-03-09 19:27:48,R_7ebufC06EN3Iaig,,,,,43.0782,-89.4075,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,Beyond 2 semesters of calculus,,In high school,ACT:,33,,Exact Score,1st,4.0,Female,,"18 years, 7 months",White,,English,USA,USA,3,,96693
+2026-03-09 20:34:55,2026-03-09 21:00:14,IP Address,35.148.93.179,100,1519,True,2026-03-09 21:00:15,R_1CNHUi9RgqSHYt6,,,,,43.0628,-89.3171,anonymous,EN,Option 1: I have read through the description of the research and agree to the information provided on this page.,Normal,,,2 semesters of calculus,,In high school,ACT:,34,,Exact Score,2nd,3.6,Female,,"19 years, 6 months",White,,English,United States,United States,1,Custom Value,89427

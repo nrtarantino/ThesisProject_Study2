@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Categorization Task</title>
+    <title>Categorization Task (Local)</title>
     <style>
         body {
             margin: 0;
@@ -159,6 +159,7 @@
     </style>
 </head>
 <body>
+    <!-- Run locally: python -m http.server 8000 then open http://localhost:8000/index2.html -->
     <div id="container">
         <div id="instructions">
             <p id="instructionText">Loading...</p>
@@ -184,22 +185,23 @@
     </div>
 
     <script>
-        const QUALTRICS_ORIGIN = 'https://uwmadison.co1.qualtrics.com';
+        const STIMULI_BASE = 'stimuli2';
+        const NEUTRAL_PATH = STIMULI_BASE + '/neutral.png';
 
         const urlParams = new URLSearchParams(window.location.search);
         const C = parseInt(urlParams.get('C')) || null;
-        const sonaId = urlParams.get('id') || '';
-        const qualtricsResponseId = urlParams.get('ResponseID') || '';
+        const sonaId = urlParams.get('id') || urlParams.get('sonaId') || '';
+        const qualtricsResponseId = urlParams.get('ResponseID') || urlParams.get('qualtricsResponseId') || '';
         
-        let responseCode, block, participantCondition;
+        let responseCode, blockOrder, participantCondition;
         
-        // block = between-subjects: 1 = Trend only, 2 = Number only
+        // Block order = between-subjects condition: 1 = Trend only, 2 = Number only
         if (C !== null && C >= 1 && C <= 4) {
             responseCode = (C === 1 || C === 2) ? 1 : 2;
-            block = (C === 1 || C === 3) ? 1 : 2;
+            blockOrder = (C === 1 || C === 3) ? 1 : 2;
         } else {
             responseCode = Math.random() < 0.5 ? 1 : 2;
-            block = Math.random() < 0.5 ? 1 : 2;
+            blockOrder = Math.random() < 0.5 ? 1 : 2;
         }
         participantCondition = responseCode;
         
@@ -215,9 +217,6 @@
             const category = block.categoryField === 'trend_category' ? trial.trend_category : trial.size_category;
             return KEY_MAPPING[condition][category];
         }
-        
-        const STIMULI_BASE = 'stimuli2';
-        const NEUTRAL_PATH = STIMULI_BASE + '/neutral.png';
         
         let manifest = [];
         let currentBlock = 0;
@@ -237,8 +236,8 @@
         let stimulusHideTimeout = null;
         let reminderTextTimeout = null;
         
-        // Between-subjects: block 1 = Trend only, block 2 = Number only
-        const BLOCKS = block === 1
+        // Between-subjects: blockOrder 1 = Trend only, 2 = Number only
+        const BLOCKS = blockOrder === 1
             ? [{ name: 'Trend', categoryField: 'trend_category' }]
             : [{ name: 'Number', categoryField: 'size_category' }];
         
@@ -314,7 +313,7 @@
                 
                 showOverviewScreen();
             } catch (error) {
-                document.getElementById('instructionText').textContent = 'Error loading stimuli.';
+                document.getElementById('instructionText').textContent = 'Error loading stimuli. Run with: python -m http.server 8000 then open http://localhost:8000/index2.html';
             }
         }
         
@@ -401,11 +400,12 @@
         
         function getOverviewText() {
             const block = BLOCKS[currentBlock];
+            const isFirstTask = currentBlock === 0;
             const breakNote = ' There will be a break in the middle of this task. The task will take 5-7 minutes.';
             if (block.categoryField === 'trend_category') {
-                return `In this part of the study you will be judging the trend of dots in an array. A dot array will appear in the bottom of the screen where the green square is for a short time and you will use the P and Q keys to indicate if it has an increasing or decreasing trend compared to the dot array that will be displayed above it where the red square is.${breakNote}`;
+                return `In this study you will be judging the trend of dots in an array. A dot array will appear in the bottom of the screen where the green square is for a short time and you will use the P and Q keys to indicate if it has an increasing or decreasing trend compared to the dot array that will be displayed above it where the red square is.${breakNote}`;
             } else {
-                return `In this part of the study you will be judging the number of dots in an array. A dot array will appear in the bottom of the screen where the green square is for a short time and you will use the P and Q keys to indicate if it has more or fewer dots compared to the dot array that will be displayed above it where the red square is.${breakNote}`;
+                return `In this study you will be judging the number of dots in an array. A dot array will appear in the bottom of the screen where the green square is for a short time and you will use the P and Q keys to indicate if it has more or fewer dots compared to the dot array that will be displayed above it where the red square is.${breakNote}`;
             }
         }
         
@@ -571,7 +571,7 @@
         function exportTrialData() {
             if (trialData.length === 0) return;
             
-            const headers = ['sonaId','qualtricsResponseId','trialNumber','stimulusIndex','n','slope','noise','responseCode','block','accuracy','reactionTime','blockName','responseKey','trialType'];
+            const headers = ['sonaId','qualtricsResponseId','trialNumber','stimulusIndex','n','slope','noise','responseCode','blockOrder','accuracy','reactionTime','blockName','responseKey','trialType'];
             let csv = headers.join(',') + '\n';
             
             trialData.forEach(t => {
@@ -584,7 +584,7 @@
                     t.slope !== null ? t.slope.toFixed(6) : '',
                     t.noise,
                     t.responseCode,
-                    t.block,
+                    t.blockOrder,
                     t.accuracy,
                     t.reactionTime,
                     t.blockName,
@@ -593,41 +593,17 @@
                 ].join(',') + '\n';
             });
             
-            const filename = `study2_${qualtricsResponseId || sonaId || Date.now()}.csv`;
+            const filename = `study2_local_${qualtricsResponseId || sonaId || Date.now()}_block${blockOrder}.csv`;
             
-            fetch("https://pipe.jspsych.org/api/data/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", Accept: "*/*" },
-                body: JSON.stringify({
-                    experimentID: "1IQX1jXTAEW6",
-                    filename: filename,
-                    data: csv,
-                }),
-            })
-            .then(() => { finishAndReturn(); })
-            .catch(() => { finishAndReturn(); });
-        }
-        
-        function finishAndReturn() {
-            function sendDone() {
-                try {
-                    if (window.opener && !window.opener.closed) {
-                        window.opener.postMessage('{"type":"TASK_DONE"}', QUALTRICS_ORIGIN);
-                        window.opener.postMessage({ type: 'TASK_DONE' }, QUALTRICS_ORIGIN);
-                        return true;
-                    }
-                } catch (e) {}
-                return false;
-            }
-            sendDone();
-            setTimeout(sendDone, 75);
-            setTimeout(sendDone, 200);
-            setTimeout(function() {
-                window.close();
-                setTimeout(function() {
-                    document.getElementById('instructionText').textContent = 'Task complete. Please return to your Qualtrics tab to continue.';
-                }, 150);
-            }, 150);
+            // Local mode: download CSV instead of posting to DataPipe
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(a.href);
+            
+            document.getElementById('instructionText').textContent = 'Task complete. Data saved as ' + filename;
         }
         
         document.addEventListener('keydown', (e) => {
@@ -659,7 +635,7 @@
                 slope: trial.slope,
                 noise: trial.sigma,
                 responseCode: responseCode,
-                block: block,
+                blockOrder: blockOrder,
                 accuracy: correct,
                 reactionTime: reactionTime,
                 blockName: BLOCKS[currentBlock].name,
@@ -667,7 +643,6 @@
                 trialType: isTrainingPhase ? 'training' : 'main'
             });
             
-            // Track recent responses for reminder check
             recentResponses.push(correct);
             
             if (stimulusHideTimeout) {
@@ -681,7 +656,6 @@
             currentTrialIndex++;
             const breakAfterTrial = 256;
             
-            // Check if 3 wrong out of last 6 — show reminder (takes priority over break)
             let needsReminder = false;
             if (recentResponses.length >= 6) {
                 const last6 = recentResponses.slice(-6);
@@ -700,7 +674,6 @@
                 return;
             }
             
-            // Skip break during training (only 10 trials)
             if (isTrainingPhase) {
                 presentTrial(500);
                 return;
