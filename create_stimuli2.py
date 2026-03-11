@@ -26,22 +26,23 @@ Y_MAX = 1.27
 
 DOT_DIAMETER_PX = round(2 * math.sqrt((DOT_RADIUS * 2) / math.pi) * (DPI / 72))
 
-SLOPES = [-0.1405, -0.1051, -0.0699, -0.0349, 0.0349, 0.0699, 0.1051, 0.1405]
+SLOPES = [-0.1763, -0.1317, -0.0875, -0.0437, 0.0437, 0.0875, 0.1317, 0.1763]
 N_VALUES = [8, 10, 12, 14, 16, 18, 20, 22]
 VERSIONS_PER_COMBO = 8  # 8 × 8 × 8 = 512 main stimuli
 TRAINING_VERSIONS = 1    # 8 × 8 × 1 = 64 training stimuli
 
 # For each of 8 slope levels (index 0-7): (min_observed_slope, max_observed_slope)
 SLOPE_RANGES = [
-    (-0.1584, -0.1228),   # level 0: target -0.1405
-    (-0.1228, -0.0875),   # level 1: target -0.1051
-    (-0.0875, -0.0524),   # level 2: target -0.0699
-    (-0.0524, -0.0175),   # level 3: target -0.0349
-    (0.0175, 0.0524),     # level 4: target +0.0349
-    (0.0524, 0.0875),     # level 5: target +0.0699
-    (0.0875, 0.1228),     # level 6: target +0.1051
-    (0.1228, 0.1584),     # level 7: target +0.1405
+    (-0.1944, -0.1584),   # level 0: target -0.1763
+    (-0.1495, -0.1139),   # level 1: target -0.1317
+    (-0.1051, -0.0699),   # level 2: target -0.0875
+    (-0.0612, -0.0262),   # level 3: target -0.0437
+    (0.0262, 0.0612),     # level 4: target +0.0437
+    (0.0699, 0.1051),     # level 5: target +0.0875
+    (0.1139, 0.1495),     # level 6: target +0.1317
+    (0.1584, 0.1944),     # level 7: target +0.1763
 ]
+
 
 # Single range for residual variance (same for all levels).
 # With sigma=0.15, theoretical Var(residuals) ≈ σ² = 0.0225. Allow sampling variation.

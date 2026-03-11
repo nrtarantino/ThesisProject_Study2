@@ -401,7 +401,7 @@
         
         function getOverviewText() {
             const block = BLOCKS[currentBlock];
-            const breakNote = ' There will be a break in the middle of this task. The task will take 5-7 minutes.';
+            const breakNote = ' There will be breaks throughout this task. The task will take 5-7 minutes.';
             if (block.categoryField === 'trend_category') {
                 return `In this part of the study you will be judging the trend of dots in an array. A dot array will appear in the bottom of the screen where the green square is for a short time and you will use the P and Q keys to indicate if it has an increasing or decreasing trend compared to the dot array that will be displayed above it where the red square is.${breakNote}`;
             } else {
@@ -426,16 +426,16 @@
             document.getElementById('overviewRedSquare').style.display = 'none';
             document.getElementById('overviewGreenSquare').style.display = 'none';
             document.getElementById('continueButton').style.display = 'none';
-            const partNum = ((currentPart - 1) % 2) + 1;
-            const isPart2 = (currentPart === 2);
-            const instrText = getBlockInstructions(isPart2);
-            const breakContent = isPart2 ? `
+            const partNum = currentPart;
+            const isAfterBreak = (currentPart > 1);
+            const instrText = getBlockInstructions(isAfterBreak);
+            const breakContent = isAfterBreak ? `
                 <p class="breakTitle">Break</p>
-                <p>Feel free to take a break. The second part of this task is the same as the last.</p>
+                <p>Feel free to take a break. Part ${partNum} of 4 is the same as the last.</p>
             ` : '';
             document.getElementById('instructionText').innerHTML = `
                 ${breakContent}
-                <p>Part ${partNum} of 2</p>
+                <p>Part ${partNum} of 4</p>
                 <p>${instrText}</p>
             `;
             document.getElementById('instructions').style.display = 'block';
@@ -593,7 +593,7 @@
                 ].join(',') + '\n';
             });
             
-            const filename = `study2_${qualtricsResponseId || sonaId || Date.now()}.csv`;
+            const filename = `study2b_${qualtricsResponseId || sonaId || Date.now()}.csv`;
             
             fetch("https://pipe.jspsych.org/api/data/", {
                 method: "POST",
@@ -705,8 +705,8 @@
                 return;
             }
             
-            // Break when half the main trials remain (middle of block)
-            if (trialsPool.length === 256) {
+            // Break every 128 trials (at 384, 256, 128 remaining)
+            if (trialsPool.length === 384 || trialsPool.length === 256 || trialsPool.length === 128) {
                 setTimeout(() => {
                     isIntertrialInterval = false;
                     showBreak();
