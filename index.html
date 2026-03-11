@@ -679,8 +679,7 @@
             isIntertrialInterval = true;
             
             currentTrialIndex++;
-            const breakAfterTrial = 256;
-            
+
             // Check if 3 wrong out of last 6 — show reminder (takes priority over break)
             let needsReminder = false;
             if (recentResponses.length >= 6) {
@@ -706,7 +705,8 @@
                 return;
             }
             
-            if (currentTrialIndex === breakAfterTrial) {
+            // Break when half the main trials remain (middle of block)
+            if (trialsPool.length === 256) {
                 setTimeout(() => {
                     isIntertrialInterval = false;
                     showBreak();
