@@ -1,7 +1,4 @@
 library(tidyverse)
-library(readr)
-library(dplyr)
-library(purrr)
 
 # ---------------- Load ----------------
 df <- read_csv(
@@ -9,8 +6,8 @@ df <- read_csv(
     path.expand("~"),
     "Desktop",
     "ThesisProject_Study2",
-    "DataExp1a",
-    "study2_combined.csv"
+    "DataExp1b",
+    "study2b_combined.csv"
   )
 )
 
@@ -24,7 +21,7 @@ df <- df %>%
     slope = as.numeric(as.character(slope)),
     n     = as.numeric(as.character(n)),
     
-    # math experience coding (from the existing math_level column)
+    # math experience coding
     math_exp = case_when(
       math_level %in% c("Geometry", "Algebra", "Pre-calculus") ~ "below_calc",
       math_level == "1 semester of calculus"                  ~ "calc_1",
@@ -41,7 +38,6 @@ df <- df %>%
     
     math_num = as.numeric(math_exp),
     
-    # effect coding + centering
     math_c = case_when(
       math_exp == "below_calc" ~ -1.5,
       math_exp == "calc_1"     ~ -0.5,
@@ -63,47 +59,32 @@ df <- df %>%
     level_8 = if_else(
       blockName == "Trend",
       as.numeric(factor(slope, levels = sort(unique(slope)))),
-      as.numeric(factor(n,     levels = sort(unique(n))))
+      as.numeric(factor(n, levels = sort(unique(n))))
     ),
     level = 5 - pmin(level_8, 9 - level_8)
   ) %>%
   ungroup()
 
-# ---------------- Drop participants below chance on any block ----------------
-ids_keep <- df %>%
-  filter(!is.na(acc)) %>%
-  group_by(sonaId, blockName) %>%
-  summarise(
-    n_correct = sum(acc),
-    n_trials  = n(),
-    above_chance = ifelse(
-      n_trials > 0,
-      binom.test(n_correct, n_trials, p = 0.5, alternative = "greater")$p.value < 0.05,
-      FALSE
-    ),
-    .groups = "drop"
-  ) %>%
-  group_by(sonaId) %>%
-  summarise(keep = all(above_chance), .groups = "drop") %>%
-  filter(keep) %>%
-  pull(sonaId)
-
-df_cleaned <- df %>%
-  filter(sonaId %in% ids_keep)
-
-df_cleaned %>%
+df %>%
   summarise(n_participants = n_distinct(sonaId))
+
+## ACC by participant ##
+
+df %>%
+  group_by(sonaId) %>%
+  summarise(mean_accuracy = mean(acc, na.rm = TRUE))
+
 # ---------------- Descriptive mean comparison ----------------
-df_cleaned %>%
+df %>%
   group_by(blockName) %>%
   summarise(mean_accuracy = mean(acc, na.rm = TRUE), .groups = "drop")
 
 # ---------------- Discriminability model ----------------
-m_discriminability <- glm(acc ~ blockName * level, data = df_cleaned, family = binomial)
+m_discriminability <- glm(acc ~ blockName * level, data = df, family = binomial)
 anova(m_discriminability, test = "Chisq")
 
 # ---------------- Psychometric curve: Trend ----------------
-trend <- df_cleaned %>%
+trend <- df %>%
   filter(blockName == "Trend", !is.na(acc), !is.na(slope), slope != 0) %>%
   mutate(
     level = as.numeric(factor(slope, levels = sort(unique(slope)))),
@@ -126,56 +107,60 @@ ggplot() +
   theme_classic() +
   labs(title = "Trend", x = "Level (1–8)", y = "P(positive)")
 
-# ---------------- Psychometric curve: Big/Small ----------------
-bs <- df_cleaned %>%
-  filter(blockName == "Big/Small", !is.na(acc), !is.na(n), n != 15) %>%
+# ---------------- Psychometric curve: Number ----------------
+num <- df %>%
+  filter(blockName == "Number", !is.na(acc), !is.na(n), n != 15) %>%
   mutate(
     level = as.numeric(factor(n, levels = sort(unique(n)))),
     resp  = if_else((n > 15 & acc == 1) | (n < 15 & acc == 0), 1L, 0L)
   )
 
-fit_b <- glm(resp ~ level, data = bs, family = binomial)
-pred_b_levels <- seq(1, 8, length.out = 300)
-pred_b <- tibble(
-  level = pred_b_levels,
-  p = predict(fit_b, newdata = tibble(level = pred_b_levels), type = "response")
+fit_n <- glm(resp ~ level, data = num, family = binomial)
+
+pred_n_levels <- seq(1, 8, length.out = 300)
+
+pred_n <- tibble(
+  level = pred_n_levels,
+  p = predict(fit_n, newdata = tibble(level = pred_n_levels), type = "response")
 )
-pts_b <- bs %>% group_by(level) %>% summarise(p = mean(resp), .groups = "drop")
+
+pts_n <- num %>%
+  group_by(level) %>%
+  summarise(p = mean(resp), .groups = "drop")
 
 ggplot() +
-  geom_point(data = pts_b, aes(level, p), size = 3) +
-  geom_line(data = pred_b, aes(level, p)) +
+  geom_point(data = pts_n, aes(level, p), size = 3) +
+  geom_line(data = pred_n, aes(level, p)) +
   scale_x_continuous(breaks = 1:8) +
   scale_y_continuous(limits = c(0, 1)) +
   theme_classic() +
-  labs(title = "Big/Small", x = "Level (1–8)", y = "P(big)")
+  labs(title = "Number", x = "Level (1–8)", y = "P(big)")
 
-# ---------------- 8-level Trend vs Big/Small accuracy ----------------
-bs_plot <- df_cleaned %>%
-  filter(blockName == "Big/Small", !is.na(acc), !is.na(n), n != 15) %>%
+# ---------------- 8-level Trend vs Number accuracy ----------------
+
+num_plot <- df %>%
+  filter(blockName == "Number", !is.na(acc), !is.na(n), n != 15) %>%
   mutate(level = as.numeric(factor(n, levels = sort(unique(n))))) %>%
   group_by(level) %>%
   summarise(
-    x = level,
     accuracy = mean(acc, na.rm = TRUE),
-    task = "Big/Small",
+    task = "Number",
     .groups = "drop"
   )
 
-trend_plot <- df_cleaned %>%
+trend_plot <- df %>%
   filter(blockName == "Trend", !is.na(acc), !is.na(slope), slope != 0) %>%
   mutate(level = as.numeric(factor(slope, levels = sort(unique(slope))))) %>%
   group_by(level) %>%
   summarise(
-    x = level,
     accuracy = mean(acc, na.rm = TRUE),
     task = "Trend",
     .groups = "drop"
   )
 
-plot_df <- bind_rows(bs_plot, trend_plot)
+plot_df <- bind_rows(num_plot, trend_plot)
 
-ggplot(plot_df, aes(x, accuracy, color = task)) +
+ggplot(plot_df, aes(x = level, y = accuracy, color = task)) +
   geom_point(size = 3) +
   geom_line() +
   scale_x_continuous(breaks = 1:8, limits = c(1, 8)) +
@@ -184,50 +169,46 @@ ggplot(plot_df, aes(x, accuracy, color = task)) +
   labs(x = "Level (1–8)", y = "Accuracy", color = NULL)
 
 
-# ---------------- 16-bin Trend vs Big/Small accuracy ----------------
-bs_plot <- df_cleaned %>%
-  filter(blockName == "Big/Small", !is.na(acc), !is.na(n), n != 15) %>%
-  mutate(level = as.numeric(factor(n, levels = sort(unique(n))))) %>%
-  group_by(level) %>%
-  summarise(
-    x = level,
-    accuracy = mean(acc, na.rm = TRUE),
-    task = "Big/Small",
-    .groups = "drop"
-  )
 
-trend_plot <- df_cleaned %>%
-  filter(blockName == "Trend", !is.na(observed_slope), !is.na(acc)) %>%
-  mutate(bin = ntile(observed_slope, 16)) %>%
+
+
+
+
+
+
+
+
+# ---------------- 16-bin Trend accuracy ----------------
+trend_plot_16 <- df %>%
+  filter(blockName == "Trend", !is.na(slope), !is.na(acc)) %>%
+  mutate(bin = ntile(slope, 16)) %>%
   group_by(bin) %>%
   summarise(
     accuracy = mean(acc, na.rm = TRUE),
     .groups = "drop"
   ) %>%
   mutate(
-    x = 1 + (bin - 1) * (7 / 15),   # map 1..16 -> 1..8
+    x = 1 + (bin - 1) * (7 / 15),
     task = "Trend (16 bins)"
   )
 
-plot_df <- bind_rows(bs_plot, trend_plot)
-
-ggplot(plot_df, aes(x, accuracy, color = task)) +
+ggplot(trend_plot_16, aes(x, accuracy)) +
   geom_point(size = 3) +
   geom_line() +
   scale_x_continuous(breaks = 1:8, limits = c(1, 8)) +
   scale_y_continuous(limits = c(0.4, 1), breaks = seq(0.4, 1, by = 0.05)) +
   theme_classic() +
-  labs(x = "Level (1–8)", y = "Accuracy", color = NULL)
+  labs(x = "Mapped level (1–8)", y = "Accuracy")
 
-## Table for the observed slope bins and respective accuracies ##
-
-df_cleaned %>%
-  filter(blockName == "Trend", !is.na(observed_slope), !is.na(acc)) %>%
-  mutate(bin = ntile(observed_slope, 16)) %>%
+# ---------------- Table for slope bins ----------------
+df %>%
+  filter(blockName == "Trend", !is.na(slope), !is.na(acc)) %>%
+  mutate(bin = ntile(slope, 16)) %>%
   group_by(bin) %>%
   summarise(
-    min_slope = min(observed_slope),
-    mean_slope = mean(observed_slope),
-    max_slope = max(observed_slope),
-    mean_accuracy = mean(acc)
+    min_slope = min(slope),
+    mean_slope = mean(slope),
+    max_slope = max(slope),
+    mean_accuracy = mean(acc),
+    .groups = "drop"
   )
