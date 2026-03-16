@@ -15,6 +15,7 @@ df <- read_csv(
 df <- df %>%
   filter(trialType != "training")
 
+
 # ---------------- Clean / recode ----------------
 df <- df %>%
   mutate(
@@ -74,6 +75,19 @@ df %>%
   group_by(sonaId) %>%
   summarise(mean_accuracy = mean(acc, na.rm = TRUE))
 
+
+# ---------------- Remove participants below chance (p < .05 vs 50%) ----------------
+threshold <- 275 / 512   # ≈ 0.537
+
+keep_ids <- df %>%
+  group_by(sonaId) %>%
+  summarise(mean_acc = mean(acc, na.rm = TRUE), .groups = "drop") %>%
+  filter(mean_acc >= threshold) %>%
+  pull(sonaId)
+
+df <- df %>%
+  filter(sonaId %in% keep_ids)
+
 # ---------------- Descriptive mean comparison ----------------
 df %>%
   group_by(blockName) %>%
@@ -107,7 +121,7 @@ ggplot() +
   theme_classic() +
   labs(title = "Trend", x = "Level (1–8)", y = "P(positive)")
 
-# ---------------- Psychometric curve: Number ----------------
+# ---------------- P3sychometric curve: Number ----------------
 num <- df %>%
   filter(blockName == "Number", !is.na(acc), !is.na(n), n != 15) %>%
   mutate(
@@ -169,19 +183,12 @@ ggplot(plot_df, aes(x = level, y = accuracy, color = task)) +
   labs(x = "Level (1–8)", y = "Accuracy", color = NULL)
 
 
+## 16 trend bins ##
 
-
-
-
-
-
-
-
-
-# ---------------- 16-bin Trend accuracy ----------------
+# ---------------- 16-bin Trend (observed slope) ----------------
 trend_plot_16 <- df %>%
-  filter(blockName == "Trend", !is.na(slope), !is.na(acc)) %>%
-  mutate(bin = ntile(slope, 16)) %>%
+  filter(blockName == "Trend", !is.na(observed_slope), !is.na(acc)) %>%
+  mutate(bin = ntile(observed_slope, 16)) %>%
   group_by(bin) %>%
   summarise(
     accuracy = mean(acc, na.rm = TRUE),
@@ -192,23 +199,57 @@ trend_plot_16 <- df %>%
     task = "Trend (16 bins)"
   )
 
-ggplot(trend_plot_16, aes(x, accuracy)) +
+# ---------------- 8-level Number ----------------
+num_plot <- df %>%
+  filter(blockName == "Number", !is.na(acc), !is.na(n), n != 15) %>%
+  mutate(level = as.numeric(factor(n, levels = sort(unique(n))))) %>%
+  group_by(level) %>%
+  summarise(
+    accuracy = mean(acc, na.rm = TRUE),
+    task = "Number (8 levels)",
+    .groups = "drop"
+  ) %>%
+  rename(x = level)
+
+# ---------------- Combine ----------------
+plot_df <- bind_rows(
+  num_plot,
+  trend_plot_16
+)
+
+# ---------------- Plot ----------------
+ggplot(plot_df, aes(x = x, y = accuracy, color = task)) +
   geom_point(size = 3) +
   geom_line() +
   scale_x_continuous(breaks = 1:8, limits = c(1, 8)) +
   scale_y_continuous(limits = c(0.4, 1), breaks = seq(0.4, 1, by = 0.05)) +
   theme_classic() +
-  labs(x = "Mapped level (1–8)", y = "Accuracy")
+  labs(x = "Level", y = "Accuracy", color = NULL)
 
-# ---------------- Table for slope bins ----------------
+
 df %>%
-  filter(blockName == "Trend", !is.na(slope), !is.na(acc)) %>%
-  mutate(bin = ntile(slope, 16)) %>%
+  filter(blockName == "Trend", !is.na(observed_slope), !is.na(acc)) %>%
+  mutate(bin = ntile(observed_slope, 16)) %>%
   group_by(bin) %>%
   summarise(
-    min_slope = min(slope),
-    mean_slope = mean(slope),
-    max_slope = max(slope),
+    min_slope = min(observed_slope),
+    mean_slope = mean(observed_slope),
+    max_slope = max(observed_slope),
     mean_accuracy = mean(acc),
     .groups = "drop"
   )
+
+
+# ---------------- Participant accuracy at each 4-level difficulty ----------------
+participant_acc_4levels <- df %>%
+  filter(!is.na(acc), !is.na(level)) %>%
+  group_by(sonaId, level) %>%
+  summarise(mean_accuracy = mean(acc, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(
+    names_from = level,
+    values_from = mean_accuracy,
+    names_prefix = "level_"
+  ) %>%
+  arrange(sonaId)
+
+participant_acc_4levels
