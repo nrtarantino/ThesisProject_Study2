@@ -569,8 +569,10 @@
             exportTrialData();
         }
         
+        let hasExported = false;
         function exportTrialData() {
-            if (trialData.length === 0) return;
+            if (trialData.length === 0 || hasExported) return;
+            hasExported = true;
             
             const headers = ['sonaId','qualtricsResponseId','trialNumber','stimulusIndex','n','slope','noise','responseCode','blockOrder','accuracy','reactionTime','blockName','responseKey','trialType'];
             let csv = headers.join(',') + '\n';
@@ -608,6 +610,7 @@
         }
         
         document.addEventListener('keydown', (e) => {
+            if (e.repeat) return;
             if (currentPhase === 'instructions' || isIntertrialInterval) return;
             
             const key = e.key.toUpperCase();

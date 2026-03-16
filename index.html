@@ -632,6 +632,7 @@
         }
         
         document.addEventListener('keydown', (e) => {
+            if (e.repeat) return;
             if (currentPhase === 'instructions' || isIntertrialInterval) return;
             
             const key = e.key.toUpperCase();
