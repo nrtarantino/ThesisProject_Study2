@@ -6,8 +6,8 @@ df <- read_csv(
     path.expand("~"),
     "Desktop",
     "ThesisProject_Study2",
-    "DataExp1b",
-    "study2b_combined.csv"
+    "DataExp1c",
+    "study2c_combined.csv"
   )
 )
 
@@ -253,3 +253,7 @@ participant_acc_4levels <- df %>%
   arrange(sonaId)
 
 participant_acc_4levels
+
+##to delete participants
+df <- df %>%
+  filter(!sonaId %in% c(91618, 96305, 12345))
