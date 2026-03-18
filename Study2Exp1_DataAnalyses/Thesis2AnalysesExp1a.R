@@ -6,8 +6,7 @@ df <- read_csv(
     path.expand("~"),
     "Desktop",
     "ThesisProject_Study2",
-    "DataExp1c",
-    "study2c_combined.csv"
+    "study2c"
   )
 )
 
