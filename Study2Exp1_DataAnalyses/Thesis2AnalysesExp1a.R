@@ -11,6 +11,7 @@ df <- read_csv(
   )
 )
 
+
 # ---------------- Remove training trials ----------------
 df <- df %>%
   filter(trialType != "training")
@@ -92,10 +93,6 @@ df <- df %>%
 df %>%
   group_by(blockName) %>%
   summarise(mean_accuracy = mean(acc, na.rm = TRUE), .groups = "drop")
-
-# ---------------- Discriminability model ----------------
-m_discriminability <- glm(acc ~ blockName * level, data = df, family = binomial)
-anova(m_discriminability, test = "Chisq")
 
 # ---------------- Psychometric curve: Trend ----------------
 trend <- df %>%
@@ -182,64 +179,6 @@ ggplot(plot_df, aes(x = level, y = accuracy, color = task)) +
   theme_classic() +
   labs(x = "Level (1–8)", y = "Accuracy", color = NULL)
 
-
-## 16 trend bins ##
-
-# ---------------- 16-bin Trend (observed slope) ----------------
-trend_plot_16 <- df %>%
-  filter(blockName == "Trend", !is.na(observed_slope), !is.na(acc)) %>%
-  mutate(bin = ntile(observed_slope, 16)) %>%
-  group_by(bin) %>%
-  summarise(
-    accuracy = mean(acc, na.rm = TRUE),
-    .groups = "drop"
-  ) %>%
-  mutate(
-    x = 1 + (bin - 1) * (7 / 15),
-    task = "Trend (16 bins)"
-  )
-
-# ---------------- 8-level Number ----------------
-num_plot <- df %>%
-  filter(blockName == "Number", !is.na(acc), !is.na(n), n != 15) %>%
-  mutate(level = as.numeric(factor(n, levels = sort(unique(n))))) %>%
-  group_by(level) %>%
-  summarise(
-    accuracy = mean(acc, na.rm = TRUE),
-    task = "Number (8 levels)",
-    .groups = "drop"
-  ) %>%
-  rename(x = level)
-
-# ---------------- Combine ----------------
-plot_df <- bind_rows(
-  num_plot,
-  trend_plot_16
-)
-
-# ---------------- Plot ----------------
-ggplot(plot_df, aes(x = x, y = accuracy, color = task)) +
-  geom_point(size = 3) +
-  geom_line() +
-  scale_x_continuous(breaks = 1:8, limits = c(1, 8)) +
-  scale_y_continuous(limits = c(0.4, 1), breaks = seq(0.4, 1, by = 0.05)) +
-  theme_classic() +
-  labs(x = "Level", y = "Accuracy", color = NULL)
-
-
-df %>%
-  filter(blockName == "Trend", !is.na(observed_slope), !is.na(acc)) %>%
-  mutate(bin = ntile(observed_slope, 16)) %>%
-  group_by(bin) %>%
-  summarise(
-    min_slope = min(observed_slope),
-    mean_slope = mean(observed_slope),
-    max_slope = max(observed_slope),
-    mean_accuracy = mean(acc),
-    .groups = "drop"
-  )
-
-
 # ---------------- Participant accuracy at each 4-level difficulty ----------------
 participant_acc_4levels <- df %>%
   filter(!is.na(acc), !is.na(level)) %>%
@@ -257,3 +196,39 @@ participant_acc_4levels
 ##to delete participants
 df <- df %>%
   filter(!sonaId %in% c(91618, 96305, 12345))
+
+## 4 levels graphed by task
+
+plot_4 <- df %>%
+  filter(!is.na(acc), !is.na(level)) %>%
+  group_by(blockName, level) %>%
+  summarise(
+    accuracy = mean(acc, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ggplot(plot_4, aes(x = level, y = accuracy, color = blockName)) +
+  geom_point(size = 3) +
+  geom_line() +
+  scale_x_continuous(breaks = 1:4, limits = c(1, 4)) +
+  scale_y_continuous(limits = c(0.4, 1), breaks = seq(0.4, 1, by = 0.05)) +
+  theme_classic() +
+  labs(
+    x = "Difficulty Level (1 = hardest, 4 = easiest)",
+    y = "Accuracy",
+    color = "Task"
+  )
+
+## Model to test
+
+m_4level <- glm(acc ~ blockName * level,
+                data = df,
+                family = binomial)
+
+anova(m_4level, test = "Chisq")
+
+## Participants per block
+
+df %>%
+  distinct(sonaId, blockName) %>%
+  count(blockName)

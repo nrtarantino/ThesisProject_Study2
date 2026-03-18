@@ -38,7 +38,6 @@ def main():
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
     main_manifest = project_root / 'stimuli2' / 'manifest.csv'
-    training_manifest = project_root / 'stimuli2' / 'manifest_training.csv'
 
     # Step 1: Combine CSVs
     csv_files = sorted(p for p in script_dir.glob('study2c_*.csv')
@@ -68,11 +67,9 @@ def main():
     output_path = script_dir / 'study2c_combined.csv'
     headers = headers + ['observed_slope', 'math_level']
 
-    # Step 2: Load manifests and add observed_slope
+    # Step 2: Load main manifest (study2c uses main manifest for both training and main trials)
     main_slopes = load_manifest_by_index(main_manifest) if main_manifest.exists() else {}
-    training_slopes = load_manifest_by_index(training_manifest) if training_manifest.exists() else {}
     print(f'\nLoaded main manifest: {len(main_slopes)} stimuli')
-    print(f'Loaded training manifest: {len(training_slopes)} stimuli')
 
     # Step 3: Load Qualtrics data (col I = ResponseId, col V = math_level)
     qualtrics_path = script_dir / 'qualtricsdata.csv'
@@ -81,11 +78,7 @@ def main():
 
     for row in all_rows:
         idx = int(row['stimulusIndex'])
-        trial_type = row.get('trialType', 'main')
-        if trial_type == 'training':
-            row['observed_slope'] = training_slopes.get(idx, '')
-        else:
-            row['observed_slope'] = main_slopes.get(idx, '')
+        row['observed_slope'] = main_slopes.get(idx, '')
         row['math_level'] = math_levels.get(row.get('qualtricsResponseId', ''), '')
 
     with open(output_path, 'w', newline='', encoding='utf-8') as f:

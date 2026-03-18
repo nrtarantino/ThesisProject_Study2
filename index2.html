@@ -23,84 +23,19 @@
             position: relative;
         }
         
-        #neutralDisplay {
+        #trialDisplay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
-            height: 50vh;
-        }
-        
-        #neutralDisplay img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-        
-        #trialDisplay {
-            display: none;
-            position: fixed;
-            top: 50vh;
-            left: 0;
-            width: 100vw;
-            height: 50vh;
+            height: 100vh;
         }
         
         #trialDisplay img {
             width: 100%;
             height: 100%;
             object-fit: contain;
-        }
-        
-        #reminderText {
-            display: none;
-            position: fixed;
-            top: 50vh;
-            left: 0;
-            width: 100vw;
-            height: 50vh;
-            padding: 20px;
-            box-sizing: border-box;
-            font-size: 18px;
-            line-height: 1.6;
-            text-align: center;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        #reminderText .reminderContent {
-            max-width: min(1100px, 95vw);
-            text-align: center;
-            margin: 0 auto;
-        }
-        
-        #reminderText .reminderOption {
-            font-size: 1.35em;
-        }
-        
-        #centerLine {
-            display: none;
-            position: fixed;
-            left: 0;
-            top: calc(50vh - 1px);
-            width: 100%;
-            height: 2px;
-            background: white;
-            pointer-events: none;
-            z-index: 10;
-        }
-        
-        #instructions {
-            max-width: 800px;
-            padding: 20px;
-            font-size: 18px;
-            line-height: 1.6;
-        }
-        
-        #instructions .taskName {
-            font-size: 24px;
         }
         
         .button {
@@ -111,50 +46,15 @@
             display: block;
         }
         
-        .breakTitle {
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-        
-        #overviewScreen {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            max-width: 800px;
-            font-size: 18px;
-            line-height: 1.6;
-        }
-        
-        #overviewTaskTitle {
-            font-size: 36px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-        
-        #overviewRedSquare {
+        #feedbackSquare {
             display: none;
             position: fixed;
+            top: 50%;
             left: 50%;
-            top: 22vh;
             transform: translate(-50%, -50%);
-            width: 60px;
-            height: 60px;
-            background-color: #c00;
-            z-index: 20;
-        }
-        
-        #overviewGreenSquare {
-            display: none;
-            position: fixed;
-            left: 50%;
-            bottom: 22vh;
-            transform: translate(-50%, 50%);
-            width: 60px;
-            height: 60px;
-            background-color: #0a0;
-            z-index: 20;
+            width: 80px;
+            height: 80px;
+            z-index: 25;
         }
     </style>
 </head>
@@ -162,31 +62,18 @@
     <!-- Run locally: python -m http.server 8000 then open http://localhost:8000/index2.html -->
     <div id="container">
         <div id="instructions">
-            <p id="instructionText">Loading...</p>
+            <p id="instructionText"></p>
             <button id="startButton" class="button" style="display: none;">Start</button>
         </div>
         
-        <div id="overviewScreen">
-            <p id="overviewTaskTitle"></p>
-            <p id="overviewText"></p>
-            <div id="overviewRedSquare"></div>
-            <div id="overviewGreenSquare"></div>
-            <button id="continueButton" class="button">Continue</button>
-        </div>
-        
-        <div id="centerLine"></div>
-        <div id="neutralDisplay">
-            <img id="topImage" alt="Neutral">
-        </div>
         <div id="trialDisplay">
-            <img id="bottomImage" alt="Stimulus">
+            <img id="stimulusImage" alt="Stimulus">
         </div>
-        <div id="reminderText"></div>
+        <div id="feedbackSquare"></div>
     </div>
 
     <script>
         const STIMULI_BASE = 'stimuli2';
-        const NEUTRAL_PATH = STIMULI_BASE + '/neutral.png';
 
         const urlParams = new URLSearchParams(window.location.search);
         const C = parseInt(urlParams.get('C')) || null;
@@ -203,7 +90,7 @@
             responseCode = Math.random() < 0.5 ? 1 : 2;
             blockOrder = Math.random() < 0.5 ? 1 : 2;
         }
-        blockOrder = 2;  // Force Number for now
+        const stimulusPairing = blockOrder;  // 1 = equal-level (1-1,2-2...), 2 = flipped (1-8,2-7...)
         participantCondition = responseCode;
         
         // Key mappings: condition determines which key maps to which category
@@ -220,22 +107,21 @@
         }
         
         let manifest = [];
+        let participantPool = [];  // 256 stimuli (64 types × 4 exemplars)
+        let trainingPool = [];    // 32 condition-specific (equal or opposite)
+        let mainPool = [];        // 224 = 256 minus training
         let currentBlock = 0;
         let currentPhase = 'instructions';
         let currentTrialIndex = 0;
         let trialsPool = [];
-        let trainingManifest = [];
         let isTrainingPhase = false;
         let trialStartTime = 0;
         let trialData = [];
         let globalTrialNumber = 0;
         let isIntertrialInterval = false;
         let currentPart = 1;
-        let resumeAfterBreak = false;
-        let resumeAfterReminder = false;
         let recentResponses = [];
         let stimulusHideTimeout = null;
-        let reminderTextTimeout = null;
         
         // Between-subjects: blockOrder 1 = Trend only, 2 = Number only
         const BLOCKS = blockOrder === 1
@@ -249,6 +135,20 @@
                 [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
             }
             return shuffled;
+        }
+        
+        // Manifest index structure: slope_idx*64 + n_idx*8 + version.
+        // Equal-level = slope_idx === n_idx (negative trend with few dots).
+        // Opposite-level = slope_idx === 7 - n_idx (level 1↔8, 2↔7, 3↔6, 4↔5).
+        function getEqualLevelType(index) {
+            const slopeIdx = Math.floor(index / 64);
+            const nIdx = Math.floor((index % 64) / 8);
+            return slopeIdx === nIdx ? slopeIdx : -1;
+        }
+        function getOppositeLevelType(index) {
+            const slopeIdx = Math.floor(index / 64);
+            const nIdx = Math.floor((index % 64) / 8);
+            return slopeIdx === (7 - nIdx) ? slopeIdx : -1;
         }
         
         async function loadManifest() {
@@ -277,44 +177,30 @@
                     manifest.push(entry);
                 }
                 
-                manifest.forEach(entry => {
-                    const img = new Image();
-                    img.src = `${STIMULI_BASE}/${entry.path || entry.filename}`;
-                });
+                // Base: 64 types × 4 exemplars = 256 stimuli (same for everyone)
+                participantPool = manifest.filter(entry => (entry.index % 8) < 4);
+                // Training: condition-specific 32 (equal-level 1-1,2-2... or opposite 1-8,2-7...). Main: remaining 224.
+                trainingPool = stimulusPairing === 1
+                    ? participantPool.filter(entry => getEqualLevelType(entry.index) >= 0)
+                    : participantPool.filter(entry => getOppositeLevelType(entry.index) >= 0);
+                const trainingIndices = new Set(trainingPool.map(e => e.index));
+                mainPool = participantPool.filter(entry => !trainingIndices.has(entry.index));
                 
-                try {
-                    const trainResponse = await fetch(STIMULI_BASE + '/manifest_training.csv', { cache: 'no-store' });
-                    if (trainResponse.ok) {
-                        const trainText = await trainResponse.text();
-                        const trainLines = trainText.split('\n');
-                        const trainHeaders = trainLines[0].split(',');
-                        for (let i = 1; i < trainLines.length; i++) {
-                            if (trainLines[i].trim() === '') continue;
-                            const values = parseCSVLine(trainLines[i]);
-                            if (values.length < trainHeaders.length) continue;
-                            const entry = {};
-                            trainHeaders.forEach((header, idx) => {
-                                entry[header.trim()] = values[idx] ? values[idx].trim() : '';
-                            });
-                            entry.index = parseInt(entry.index);
-                            entry.slope = parseFloat(entry.slope);
-                            entry.n = parseInt(entry.n);
-                            entry.sigma = parseFloat(entry.sigma || 0.15);
-                            trainingManifest.push(entry);
-                        }
-                        trainingManifest.forEach(entry => {
-                            const img = new Image();
-                            img.src = `${STIMULI_BASE}/${entry.path || entry.filename}`;
-                        });
-                    }
-                } catch (e) {}
+                // Preload all 256 and wait before enabling Start
+                document.getElementById('instructionText').textContent = 'Loading stimuli...';
+                await Promise.all(participantPool.map(entry => {
+                    return new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.onload = resolve;
+                        img.onerror = resolve; // proceed even if one fails
+                        img.src = `${STIMULI_BASE}/${entry.path || entry.filename}`;
+                    });
+                }));
                 
-                const neutralPreload = new Image();
-                neutralPreload.src = NEUTRAL_PATH;
-                
-                showOverviewScreen();
+                document.getElementById('instructionText').textContent = '';
+                document.getElementById('startButton').style.display = 'block';
             } catch (error) {
-                document.getElementById('instructionText').textContent = 'Error loading stimuli. Run with: python -m http.server 8000 then open http://localhost:8000/index2.html';
+                document.getElementById('instructionText').textContent = 'Error loading. Run: python -m http.server 8000';
             }
         }
         
@@ -342,14 +228,7 @@
             return block.categoryField === 'trend_category' ? 'Trend Judgement Task' : 'Number Task';
         }
         
-        function hideReminderText() {
-            if (reminderTextTimeout) {
-                clearTimeout(reminderTextTimeout);
-                reminderTextTimeout = null;
-            }
-            const el = document.getElementById('reminderText');
-            el.style.display = 'none';
-        }
+        function hideReminderText() {}
         
         function getReminderText() {
             const block = BLOCKS[currentBlock];
@@ -446,27 +325,14 @@
             currentPhase = 'instructions';
         }
         
-        document.getElementById('continueButton').addEventListener('click', () => {
-            showPartScreen();
-        });
-        
         function startBlock() {
-            if (trainingManifest.length >= 10) {
-                const shuffled = shuffleArray([...trainingManifest]);
-                trialsPool = shuffled.slice(0, 10);
-                isTrainingPhase = true;
-            } else {
-                trialsPool = shuffleArray([...manifest]);
-                isTrainingPhase = false;
-            }
+            trialsPool = shuffleArray([...trainingPool]);
+            isTrainingPhase = true;
             currentTrialIndex = 0;
             recentResponses = [];
             currentPhase = 'main';
             document.getElementById('instructions').style.display = 'none';
             document.getElementById('startButton').style.display = 'none';
-            document.getElementById('centerLine').style.display = 'block';
-            document.getElementById('neutralDisplay').style.display = 'block';
-            document.getElementById('topImage').src = NEUTRAL_PATH;
             presentTrial();
         }
         
@@ -476,13 +342,14 @@
                 stimulusHideTimeout = null;
             }
             hideReminderText();
+            document.getElementById('feedbackSquare').style.display = 'none';
             if (trialsPool.length === 0) {
                 if (isTrainingPhase) {
                     isTrainingPhase = false;
-                    trialsPool = shuffleArray([...manifest]);
+                    trialsPool = shuffleArray([...mainPool]);
                     currentTrialIndex = 0;
                     recentResponses = [];
-                    setTimeout(() => presentTrial(500), 500);
+                    setTimeout(() => presentTrial(0), 500);  // 0 ITI after training→main transition
                     return;
                 }
                 setTimeout(() => {
@@ -491,10 +358,6 @@
                         showCompletion();
                         return;
                     }
-                    currentPart++;
-                    document.getElementById('trialDisplay').style.display = 'none';
-                    hideReminderText();
-                    showOverviewScreen();
                 }, 500);
                 return;
             }
@@ -506,16 +369,15 @@
             window.currentTrial = trial;
             
             const trialPath = trial.path || trial.filename;
-            document.getElementById('bottomImage').src = `${STIMULI_BASE}/${trialPath}`;
-            const topImg = document.getElementById('topImage');
-            const bottomImg = document.getElementById('bottomImage');
+            const stimulusImg = document.getElementById('stimulusImage');
+            stimulusImg.src = `${STIMULI_BASE}/${trialPath}`;
             
-            let topReady = false, bottomReady = false;
+            let imgReady = false;
             let minDelayElapsed = !itiDelayMs || itiDelayMs <= 0;
             let stimulusShown = false;
             const STIMULUS_DURATION_MS = 1500;
             function showWhenReady() {
-                if (topReady && bottomReady && minDelayElapsed && !stimulusShown) {
+                if (imgReady && minDelayElapsed && !stimulusShown) {
                     stimulusShown = true;
                     document.getElementById('trialDisplay').style.display = 'block';
                     trialStartTime = Date.now();
@@ -523,18 +385,11 @@
                     stimulusHideTimeout = setTimeout(() => {
                         stimulusHideTimeout = null;
                         document.getElementById('trialDisplay').style.display = 'none';
-                        reminderTextTimeout = setTimeout(() => {
-                            reminderTextTimeout = null;
-                            document.getElementById('reminderText').innerHTML = '<div class="reminderContent">' + getReminderText() + '</div>';
-                            document.getElementById('reminderText').style.display = 'flex';
-                        }, 250);
                     }, STIMULUS_DURATION_MS);
                 }
             }
-            topImg.onload = () => { topReady = true; showWhenReady(); };
-            bottomImg.onload = () => { bottomReady = true; showWhenReady(); };
-            if (topImg.complete) { topReady = true; showWhenReady(); }
-            if (bottomImg.complete) { bottomReady = true; showWhenReady(); }
+            stimulusImg.onload = () => { imgReady = true; showWhenReady(); };
+            if (stimulusImg.complete) { imgReady = true; showWhenReady(); }
             
             if (itiDelayMs && itiDelayMs > 0) {
                 setTimeout(() => {
@@ -544,26 +399,11 @@
             }
         }
         
-        function showBreak() {
-            currentPart++;
-            resumeAfterBreak = true;
-            document.getElementById('trialDisplay').style.display = 'none';
-            document.getElementById('overviewScreen').style.display = 'none';
-            document.getElementById('overviewRedSquare').style.display = 'none';
-            document.getElementById('overviewGreenSquare').style.display = 'none';
-            hideReminderText();
-            showPartScreen();
-        }
-        
         function showCompletion() {
             document.getElementById('trialDisplay').style.display = 'none';
-            document.getElementById('overviewScreen').style.display = 'none';
-            document.getElementById('overviewRedSquare').style.display = 'none';
-            document.getElementById('overviewGreenSquare').style.display = 'none';
+            document.getElementById('feedbackSquare').style.display = 'none';
             hideReminderText();
-            document.getElementById('neutralDisplay').style.display = 'none';
             document.getElementById('instructions').style.display = 'block';
-            document.getElementById('centerLine').style.display = 'none';
             document.getElementById('instructionText').textContent = 'Task complete. Thank you for participating.';
             document.getElementById('startButton').style.display = 'none';
             exportTrialData();
@@ -574,7 +414,7 @@
             if (trialData.length === 0 || hasExported) return;
             hasExported = true;
             
-            const headers = ['sonaId','qualtricsResponseId','trialNumber','stimulusIndex','n','slope','noise','responseCode','blockOrder','accuracy','reactionTime','blockName','responseKey','trialType'];
+            const headers = ['sonaId','qualtricsResponseId','trialNumber','stimulusIndex','n','slope','noise','responseCode','blockOrder','stimulusPairing','accuracy','reactionTime','blockName','responseKey','trialType'];
             let csv = headers.join(',') + '\n';
             
             trialData.forEach(t => {
@@ -588,6 +428,7 @@
                     t.noise,
                     t.responseCode,
                     t.blockOrder,
+                    t.stimulusPairing,
                     t.accuracy,
                     t.reactionTime,
                     t.blockName,
@@ -596,7 +437,7 @@
                 ].join(',') + '\n';
             });
             
-            const filename = `study2c_${qualtricsResponseId || sonaId || Date.now()}_block${blockOrder}.csv`;
+            const filename = `study2c_${qualtricsResponseId || sonaId || Date.now()}_block${blockOrder}_pairing${stimulusPairing}.csv`;
             
             // Local mode: download CSV instead of posting to DataPipe
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -640,6 +481,7 @@
                 noise: trial.sigma,
                 responseCode: responseCode,
                 blockOrder: blockOrder,
+                stimulusPairing: stimulusPairing,
                 accuracy: correct,
                 reactionTime: reactionTime,
                 blockName: BLOCKS[currentBlock].name,
@@ -659,63 +501,22 @@
             
             currentTrialIndex++;
 
-            let needsReminder = false;
-            if (recentResponses.length >= 6) {
-                const last6 = recentResponses.slice(-6);
-                const wrongCount = last6.filter(r => !r).length;
-                if (wrongCount >= 3) {
-                    recentResponses = [];
-                    needsReminder = true;
-                }
-            }
-            
-            if (needsReminder) {
-                setTimeout(() => {
-                    isIntertrialInterval = false;
-                    showReminder();
-                }, 500);
-                return;
-            }
-            
             if (isTrainingPhase) {
-                presentTrial(500);
-                return;
-            }
-            
-            // Break every 128 trials (at 384, 256, 128 remaining)
-            if (trialsPool.length === 384 || trialsPool.length === 256 || trialsPool.length === 128) {
+                const fb = document.getElementById('feedbackSquare');
+                fb.style.display = 'block';
+                fb.style.backgroundColor = correct ? '#0a0' : '#c00';
                 setTimeout(() => {
-                    isIntertrialInterval = false;
-                    showBreak();
+                    fb.style.display = 'none';
+                    presentTrial(0);  // 0 ITI: stimulus appears immediately (preloaded)
                 }, 500);
                 return;
             }
             
-            presentTrial(500);
+            presentTrial(0);  // 0 ITI: stimulus appears immediately (preloaded)
         }
         
         document.getElementById('startButton').addEventListener('click', () => {
-            if (resumeAfterReminder) {
-                resumeAfterReminder = false;
-                currentPhase = 'main';
-                document.getElementById('instructions').style.display = 'none';
-                document.getElementById('startButton').style.display = 'none';
-                document.getElementById('centerLine').style.display = 'block';
-                document.getElementById('neutralDisplay').style.display = 'block';
-                document.getElementById('topImage').src = NEUTRAL_PATH;
-                presentTrial();
-            } else if (resumeAfterBreak) {
-                resumeAfterBreak = false;
-                currentPhase = 'main';
-                document.getElementById('instructions').style.display = 'none';
-                document.getElementById('startButton').style.display = 'none';
-                document.getElementById('centerLine').style.display = 'block';
-                document.getElementById('neutralDisplay').style.display = 'block';
-                document.getElementById('topImage').src = NEUTRAL_PATH;
-                presentTrial();
-            } else {
-                startBlock();
-            }
+            startBlock();
         });
         
         loadManifest();
