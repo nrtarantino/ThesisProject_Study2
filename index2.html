@@ -80,17 +80,16 @@
         const sonaId = urlParams.get('id') || urlParams.get('sonaId') || '';
         const qualtricsResponseId = urlParams.get('ResponseID') || urlParams.get('qualtricsResponseId') || '';
         
-        let responseCode, blockOrder, participantCondition;
+        let responseCode, stimulusPairing, participantCondition;
         
-        // Block order = between-subjects condition: 1 = Trend only, 2 = Number only
+        // Conditions from C: responseCode (key mapping), stimulusPairing (training stimuli)
         if (C !== null && C >= 1 && C <= 4) {
             responseCode = (C === 1 || C === 2) ? 1 : 2;
-            blockOrder = (C === 1 || C === 3) ? 1 : 2;
+            stimulusPairing = (C === 1 || C === 3) ? 1 : 2;  // 1 = equal (1-1,2-2...), 2 = opposite (1-8,2-7...)
         } else {
             responseCode = Math.random() < 0.5 ? 1 : 2;
-            blockOrder = Math.random() < 0.5 ? 1 : 2;
+            stimulusPairing = Math.random() < 0.5 ? 1 : 2;
         }
-        const stimulusPairing = blockOrder;  // 1 = equal-level (1-1,2-2...), 2 = flipped (1-8,2-7...)
         participantCondition = responseCode;
         
         // Key mappings: condition determines which key maps to which category
@@ -123,10 +122,8 @@
         let recentResponses = [];
         let stimulusHideTimeout = null;
         
-        // Between-subjects: blockOrder 1 = Trend only, 2 = Number only
-        const BLOCKS = blockOrder === 1
-            ? [{ name: 'Trend', categoryField: 'trend_category' }]
-            : [{ name: 'Number', categoryField: 'size_category' }];
+        // index2: single task, always score by number
+        const BLOCKS = [{ name: 'Number', categoryField: 'size_category' }];
         
         function shuffleArray(array) {
             const shuffled = [...array];
@@ -414,7 +411,7 @@
             if (trialData.length === 0 || hasExported) return;
             hasExported = true;
             
-            const headers = ['sonaId','qualtricsResponseId','trialNumber','stimulusIndex','n','slope','noise','responseCode','blockOrder','stimulusPairing','accuracy','reactionTime','blockName','responseKey','trialType'];
+            const headers = ['sonaId','qualtricsResponseId','trialNumber','stimulusIndex','n','slope','noise','responseCode','stimulusPairing','accuracy','reactionTime','responseKey','trialType'];
             let csv = headers.join(',') + '\n';
             
             trialData.forEach(t => {
@@ -427,17 +424,15 @@
                     t.slope !== null ? t.slope.toFixed(6) : '',
                     t.noise,
                     t.responseCode,
-                    t.blockOrder,
                     t.stimulusPairing,
                     t.accuracy,
                     t.reactionTime,
-                    t.blockName,
                     t.responseKey,
                     t.trialType || 'main'
                 ].join(',') + '\n';
             });
             
-            const filename = `study2d_${qualtricsResponseId || sonaId || Date.now()}_block${blockOrder}_pairing${stimulusPairing}.csv`;
+            const filename = `study2d_${qualtricsResponseId || sonaId || Date.now()}_rc${responseCode}_pairing${stimulusPairing}.csv`;
             
             // Local mode: download CSV instead of posting to DataPipe
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -480,11 +475,9 @@
                 slope: trial.slope,
                 noise: trial.sigma,
                 responseCode: responseCode,
-                blockOrder: blockOrder,
                 stimulusPairing: stimulusPairing,
                 accuracy: correct,
                 reactionTime: reactionTime,
-                blockName: BLOCKS[currentBlock].name,
                 responseKey: key,
                 trialType: isTrainingPhase ? 'training' : 'main'
             });
