@@ -64,6 +64,27 @@
             height: 80px;
             z-index: 25;
         }
+        
+        #trainingPrompt {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 20;
+        }
+        
+        #trainingPrompt .pressKeys {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+        
+        #trainingPrompt .feedbackNote {
+            font-size: 16px;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -76,6 +97,10 @@
         
         <div id="trialDisplay">
             <img id="stimulusImage" alt="Stimulus">
+        </div>
+        <div id="trainingPrompt">
+            <div class="pressKeys">Press P or Q</div>
+            <div class="feedbackNote">Afterward, a green square will appear if your categorization was correct, and a red square if it was incorrect.</div>
         </div>
         <div id="feedbackSquare"></div>
     </div>
@@ -349,6 +374,7 @@
             }
             hideReminderText();
             document.getElementById('feedbackSquare').style.display = 'none';
+            document.getElementById('trainingPrompt').style.display = 'none';
             if (trialsPool.length === 0) {
                 if (isTrainingPhase) {
                     isTrainingPhase = false;
@@ -391,6 +417,9 @@
                     stimulusHideTimeout = setTimeout(() => {
                         stimulusHideTimeout = null;
                         document.getElementById('trialDisplay').style.display = 'none';
+                        if (isTrainingPhase) {
+                            document.getElementById('trainingPrompt').style.display = 'block';
+                        }
                     }, STIMULUS_DURATION_MS);
                 }
             }
@@ -408,6 +437,7 @@
         function showCompletion() {
             document.getElementById('trialDisplay').style.display = 'none';
             document.getElementById('feedbackSquare').style.display = 'none';
+            document.getElementById('trainingPrompt').style.display = 'none';
             hideReminderText();
             document.getElementById('instructions').style.display = 'block';
             document.getElementById('instructionText').textContent = 'Task complete. Thank you for participating.';
@@ -523,6 +553,7 @@
             }
             hideReminderText();
             document.getElementById('trialDisplay').style.display = 'none';
+            document.getElementById('trainingPrompt').style.display = 'none';
             isIntertrialInterval = true;
             
             currentTrialIndex++;
