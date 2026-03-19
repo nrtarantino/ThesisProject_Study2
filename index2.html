@@ -23,11 +23,15 @@
             position: relative;
         }
         
-        #instructionText {
-            max-width: 360px;
+        #instructionWrap {
+            width: 360px;
             margin: 0 auto;
             line-height: 1.5;
             text-align: left;
+        }
+        
+        #instructionText {
+            margin: 0;
         }
         
         #trialDisplay {
@@ -69,7 +73,9 @@
     <!-- Run locally: python -m http.server 8000 then open http://localhost:8000/index2.html -->
     <div id="container">
         <div id="instructions">
-            <p id="instructionText"></p>
+            <div id="instructionWrap">
+                <p id="instructionText"></p>
+            </div>
             <button id="startButton" class="button" style="display: none;">Start</button>
         </div>
         
