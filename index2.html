@@ -74,6 +74,7 @@
 
     <script>
         const STIMULI_BASE = 'stimuli2';
+        const QUALTRICS_ORIGIN = 'https://uwmadison.co1.qualtrics.com';
 
         const urlParams = new URLSearchParams(window.location.search);
         const C = parseInt(urlParams.get('C')) || null;
@@ -434,15 +435,39 @@
             
             const filename = `study2d_${qualtricsResponseId || sonaId || Date.now()}_rc${responseCode}_pairing${stimulusPairing}.csv`;
             
-            // Local mode: download CSV instead of posting to DataPipe
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = filename;
-            a.click();
-            URL.revokeObjectURL(a.href);
-            
-            document.getElementById('instructionText').textContent = 'Task complete. Data saved as ' + filename;
+            fetch("https://pipe.jspsych.org/api/data/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Accept: "*/*" },
+                body: JSON.stringify({
+                    experimentID: "1IQX1jXTAEW6",
+                    filename: filename,
+                    data: csv,
+                }),
+            })
+            .then(() => { finishAndReturn(); })
+            .catch(() => { finishAndReturn(); });
+        }
+        
+        function finishAndReturn() {
+            function sendDone() {
+                try {
+                    if (window.opener && !window.opener.closed) {
+                        window.opener.postMessage('{"type":"TASK_DONE"}', QUALTRICS_ORIGIN);
+                        window.opener.postMessage({ type: 'TASK_DONE' }, QUALTRICS_ORIGIN);
+                        return true;
+                    }
+                } catch (e) {}
+                return false;
+            }
+            sendDone();
+            setTimeout(sendDone, 75);
+            setTimeout(sendDone, 200);
+            setTimeout(function() {
+                window.close();
+                setTimeout(function() {
+                    document.getElementById('instructionText').textContent = 'Task complete. Thank you for participating.';
+                }, 150);
+            }, 150);
         }
         
         document.addEventListener('keydown', (e) => {
