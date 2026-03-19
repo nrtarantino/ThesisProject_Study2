@@ -195,7 +195,7 @@
                     });
                 }));
                 
-                document.getElementById('instructionText').textContent = '';
+                document.getElementById('instructionText').textContent = 'You will see a series of dot arrays. Your task is to sort each array into one of two groups by pressing the P or the Q key. At first, you will receive feedback to help you learn the correct grouping. Try to learn the rule. Later, the feedback will stop, but please continue sorting the arrays in the same way. This task will take around 5 minutes.';
                 document.getElementById('startButton').style.display = 'block';
             } catch (error) {
                 document.getElementById('instructionText').textContent = 'Error loading. Run: python -m http.server 8000';
