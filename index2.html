@@ -440,7 +440,7 @@
             document.getElementById('trainingPrompt').style.display = 'none';
             hideReminderText();
             document.getElementById('instructions').style.display = 'block';
-            document.getElementById('instructionText').textContent = 'Task complete. Thank you for participating.';
+            document.getElementById('instructionText').innerHTML = 'Task complete. Thank you for participating.<br><br>Please navigate back to the Qualtrics tab to proceed.';
             document.getElementById('startButton').style.display = 'none';
             exportTrialData();
         }
@@ -503,7 +503,7 @@
             setTimeout(function() {
                 window.close();
                 setTimeout(function() {
-                    document.getElementById('instructionText').textContent = 'Task complete. Thank you for participating.';
+                    document.getElementById('instructionText').innerHTML = 'Task complete. Thank you for participating.<br><br>Please navigate back to the Qualtrics tab to proceed.';
                 }, 150);
             }, 150);
         }
