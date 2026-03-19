@@ -523,14 +523,15 @@
                 const fb = document.getElementById('feedbackSquare');
                 fb.style.display = 'block';
                 fb.style.backgroundColor = correct ? '#0a0' : '#c00';
+                const delayMs = correct ? 500 : 750;  // longer for incorrect
                 setTimeout(() => {
                     fb.style.display = 'none';
                     presentTrial(0);  // 0 ITI: stimulus appears immediately (preloaded)
-                }, 500);
+                }, delayMs);
                 return;
             }
             
-            presentTrial(0);  // 0 ITI: stimulus appears immediately (preloaded)
+            presentTrial(500);  // 500ms ITI between main trials
         }
         
         document.getElementById('startButton').addEventListener('click', () => {
