@@ -6,9 +6,20 @@ df <- read_csv(
     path.expand("~"),
     "Desktop",
     "ThesisProject_Study2",
-    "study2c"
+    "DataExp1c",
+    "study2c_combined.csv"
   )
 )
+
+df <- read_csv(
+  file.path(
+    path.expand("~"),
+    "Desktop",
+    "ThesisProject_Study2",
+    "Study2cb_combined.csv"
+  )
+)
+
 
 
 # ---------------- Remove training trials ----------------
