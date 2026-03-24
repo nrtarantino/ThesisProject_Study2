@@ -1,4 +1,6 @@
 library(tidyverse)
+library(dplyr)
+library(ggplot2)
 
 # ---------------- Load ----------------
 df2 <- read_csv(
@@ -6,68 +8,89 @@ df2 <- read_csv(
     path.expand("~"),
     "Desktop",
     "ThesisProject_Study2",
-    "DataExp1b",
-    "study2b_combined.csv"
+    "DataExp1c",
+    "study2c_combined.csv"
   )
 )
-
-# ---------------- Remove training trials ----------------
-df2 <- df2 %>%
-  filter(trialType != "training")
 
 # ---------------- Clean / recode ----------------
 df2 <- df2 %>%
   mutate(
     slope = as.numeric(as.character(slope)),
     n     = as.numeric(as.character(n)),
-    
-    # math experience coding
-    math_exp = case_when(
-      math_level %in% c("Algebra", "Pre-calculus")            ~ "below_calc",
-      math_level == "1 semester of calculus"                  ~ "calc_1",
-      math_level == "2 semesters of calculus"                 ~ "calc_2",
-      math_level == "Beyond 2 semesters of calculus"          ~ "calc_2plus",
-      TRUE                                                    ~ NA_character_
-    ),
-    
-    math_exp = factor(
-      math_exp,
-      levels = c("below_calc", "calc_1", "calc_2", "calc_2plus"),
-      ordered = TRUE
-    ),
-    
-    math_num = as.numeric(math_exp),
-    
-    math_c = case_when(
-      math_exp == "below_calc" ~ -1.5,
-      math_exp == "calc_1"     ~ -0.5,
-      math_exp == "calc_2"     ~  0.5,
-      math_exp == "calc_2plus" ~  1.5,
-      TRUE ~ NA_real_
-    ),
-    
-    acc = case_when(
+    acc   = case_when(
       accuracy == TRUE  ~ 1L,
       accuracy == FALSE ~ 0L,
       TRUE ~ NA_integer_
     )
   )
 
-library(dplyr)
-library(ggplot2)
+# ---------------- Filter training + Trend only ----------------
+df_trend <- df2 %>%
+  filter(
+    trialType != "training",
+    blockName == "Trend",
+    !is.na(acc),
+    !is.na(slope),
+    !is.na(n),
+    n != 15
+  )
 
-acc_by_block_math <- df2 %>%
-  filter(blockName %in% c("Trend", "Number"), !is.na(math_exp)) %>%
-  
-  # participant-level accuracy
-  group_by(sonaId, math_exp, blockName) %>%
+# ---------------- Remove participants below 60% training accuracy ----------------
+good_ids <- df2 %>%
+  mutate(
+    acc = case_when(
+      accuracy == TRUE  ~ 1L,
+      accuracy == FALSE ~ 0L,
+      TRUE ~ NA_integer_
+    )
+  ) %>%
+  filter(trialType == "training", !is.na(acc)) %>%
+  group_by(sonaId) %>%
+  summarise(training_acc = mean(acc, na.rm = TRUE), .groups = "drop") %>%
+  filter(training_acc >= 0.60) %>%
+  pull(sonaId)
+
+df_trend <- df_trend %>%
+  filter(sonaId %in% good_ids)
+
+# ---------------- Make 4 conditions ----------------
+trend_4means <- df_trend %>%
+  mutate(
+    slope_group = factor(
+      if_else(slope > 0, "Positive slope", "Negative slope"),
+      levels = c("Negative slope", "Positive slope")
+    ),
+    n_group = factor(
+      if_else(n > 15, "n > 15", "n < 15"),
+      levels = c("n < 15", "n > 15")
+    )
+  ) %>%
+  group_by(sonaId, slope_group, n_group) %>%
   summarise(acc_person = mean(acc, na.rm = TRUE), .groups = "drop") %>%
-  
-  # average across participants
-  group_by(math_exp, blockName) %>%
+  group_by(slope_group, n_group) %>%
   summarise(
     accuracy = mean(acc_person, na.rm = TRUE),
     se = sd(acc_person, na.rm = TRUE) / sqrt(n()),
-    n = n(),
+    n_participants = n(),
     .groups = "drop"
   )
+
+trend_4means
+
+# ---------------- Graph ----------------
+ggplot(trend_4means, aes(x = slope_group, y = accuracy, fill = n_group)) +
+  geom_col(position = position_dodge(width = 0.8), width = 0.7) +
+  geom_errorbar(
+    aes(ymin = accuracy - se, ymax = accuracy + se),
+    position = position_dodge(width = 0.8),
+    width = 0.2
+  ) +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(
+    title = "Trend Block Accuracy",
+    x = "Slope",
+    y = "Mean Accuracy",
+    fill = "Number"
+  ) +
+  theme_classic()
