@@ -31,16 +31,23 @@ df <- df %>%
     math_exp = factor(
       math_exp,
       levels = c("below_calc", "calc_1", "calc_2", "calc_2plus"),
-      ordered = TRUE
-    ),
-    
-    math_num = as.numeric(math_exp),
-    math_z   = as.numeric(scale(math_num))
+      ordered = FALSE
+    )
   )
 
-# ---------------- Training dataframe ----------------
+df <- df %>%
+  mutate(
+    math_exp = factor(
+      math_exp,
+      levels = c("below_calc", "calc_1", "calc_2", "calc_2plus")
+    )
+  )
+
+contrasts(df$math_exp) <- contr.sum(4)
+
+# ---------------- Training dataframe (trials 10–32 only) ----------------
 df_train <- df %>%
-  filter(trialType == "training") %>%
+  filter(trialType == "training", between(trialNumber, 10, 32)) %>%
   mutate(
     acc = case_when(
       as.character(accuracy) == "TRUE"  ~ 1L,
@@ -49,35 +56,33 @@ df_train <- df %>%
     )
   )
 
-# ---------------- Find participants below 60% on training ----------------
-bad_ids <- df_train %>%
+# ---------------- Find participants below 65% on training ----------------
+train_acc_summary <- df_train %>%
   filter(!is.na(acc)) %>%
   group_by(sonaId) %>%
   summarise(
     mean_training_acc = mean(acc, na.rm = TRUE),
     n_training_trials = n(),
     .groups = "drop"
-  ) %>%
+  )
+
+bad_ids <- train_acc_summary %>%
   filter(mean_training_acc < 0.60) %>%
   pull(sonaId)
 
 bad_ids
 
 # optional: see who got excluded
-df_train %>%
-  filter(!is.na(acc)) %>%
-  group_by(sonaId) %>%
-  summarise(
-    mean_training_acc = mean(acc, na.rm = TRUE),
-    n_training_trials = n(),
-    .groups = "drop"
-  ) %>%
+train_acc_summary %>%
   filter(mean_training_acc < 0.60) %>%
   arrange(mean_training_acc)
 
-# ---------------- Remove excluded participants from full dataframe ----------------
+
+# ---------------- OPTIONAL EXCLUSION TOGGLE ----------------
+# comment this line out if you want to keep everyone
 df <- df %>%
   filter(!sonaId %in% bad_ids)
+
 
 # ---------------- Create choice variable ----------------
 df <- df %>%
@@ -90,6 +95,51 @@ df <- df %>%
       TRUE ~ NA_real_
     )
   )
+
+# ---------------- Training accuracy (per participant) ----------------
+train_acc <- df %>%
+  filter(trialType == "training", between(trialNumber, 10, 32)) %>%
+  mutate(
+    acc = case_when(
+      as.character(accuracy) == "TRUE"  ~ 1L,
+      as.character(accuracy) == "FALSE" ~ 0L,
+      TRUE ~ suppressWarnings(as.integer(accuracy))
+    )
+  ) %>%
+  group_by(sonaId) %>%
+  summarise(
+    mean_training_acc = mean(acc, na.rm = TRUE),
+    n_training_trials = n(),
+    .groups = "drop"
+  )
+
+# ---------------- math_exp (per participant) ----------------
+math_summary <- df %>%
+  group_by(sonaId) %>%
+  summarise(
+    math_exp = if (all(is.na(math_exp))) NA_character_ else first(na.omit(math_exp)),
+    .groups = "drop"
+  )
+
+# ---------------- Choice behavior (NON-training only) ----------------
+choice_summary <- df %>%
+  filter(trialType != "training") %>%
+  group_by(sonaId) %>%
+  summarise(
+    pct_choose_A_slope_neg = mean(chose_A[slope < 0], na.rm = TRUE),
+    pct_choose_A_slope_pos = mean(chose_A[slope > 0], na.rm = TRUE),
+    pct_choose_A_n_gt_15   = mean(chose_A[n > 15], na.rm = TRUE),
+    pct_choose_A_n_lt_15   = mean(chose_A[n < 15], na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# ---------------- Combine ----------------
+summary_table <- train_acc %>%
+  left_join(math_summary, by = "sonaId") %>%
+  left_join(choice_summary, by = "sonaId") %>%
+  arrange(sonaId)
+
+summary_table
 
 # ---------------- Non-training model dataframe ----------------
 df_model <- df %>%
@@ -125,7 +175,7 @@ length(unique(df_model$sonaId))
 
 # ---------------- One combined model ----------------
 model_combined <- glmer(
-  chose_A ~ n_z + slope_z_aligned + (1 + n_z + slope_z_aligned || sonaId),
+  chose_A ~ n_z *math_exp + slope_z_aligned *math_exp + (1 + n_z + slope_z_aligned || sonaId),
   data = df_model,
   family = binomial,
   control = glmerControl(optimizer = "bobyqa")

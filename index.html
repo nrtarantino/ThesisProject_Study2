@@ -194,13 +194,12 @@
         let responseCode, block, participantCondition;
         
         // block = between-subjects: 1 = Trend only, 2 = Number only
-        // TEMP: everyone gets Number (block=2), key mapping still from C
         if (C !== null && C >= 1 && C <= 4) {
             responseCode = (C === 1 || C === 2) ? 1 : 2;
-            block = 2;  // TEMP: was (C === 1 || C === 3) ? 1 : 2
+            block = (C === 1 || C === 3) ? 1 : 2;
         } else {
             responseCode = Math.random() < 0.5 ? 1 : 2;
-            block = 2;  // TEMP: was Math.random() < 0.5 ? 1 : 2
+            block = Math.random() < 0.5 ? 1 : 2;
         }
         participantCondition = responseCode;
         

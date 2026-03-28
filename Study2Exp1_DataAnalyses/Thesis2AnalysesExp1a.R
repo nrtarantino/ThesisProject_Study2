@@ -88,7 +88,7 @@ df %>%
 
 
 # ---------------- Remove participants below chance (p < .05 vs 50%) ----------------
-threshold <- 275 / 512   # ≈ 0.537
+threshold <- 300 / 512   # ≈ 0.537
 
 keep_ids <- df %>%
   group_by(sonaId) %>%
@@ -203,11 +203,7 @@ participant_acc_4levels <- df %>%
 
 participant_acc_4levels
 
-##to delete participants
-df <- df %>%
-  filter(!sonaId %in% c(91618, 96305, 12345))
-
-## 4 levels graphed by task
+## 4 levels ACC graphed by task
 
 plot_4 <- df %>%
   filter(!is.na(acc), !is.na(level)) %>%
@@ -226,6 +222,33 @@ ggplot(plot_4, aes(x = level, y = accuracy, color = blockName)) +
   labs(
     x = "Difficulty Level (1 = hardest, 4 = easiest)",
     y = "Accuracy",
+    color = "Task"
+  )
+
+## 4 LEVELS RT GRAPHED BY TASK
+
+plot_4_rt <- df %>%
+  filter(
+    !is.na(reactionTime),
+    !is.na(level),
+    acc == 1,
+    reactionTime > 200,
+    reactionTime < 3000
+  ) %>%
+  group_by(blockName, level) %>%
+  summarise(
+    reactionTime = mean(reactionTime, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ggplot(plot_4_rt, aes(x = level, y = reactionTime, color = blockName)) +
+  geom_point(size = 3) +
+  geom_line() +
+  scale_x_continuous(breaks = 1:4, limits = c(1, 4)) +
+  theme_classic() +
+  labs(
+    x = "Difficulty Level (1 = hardest, 4 = easiest)",
+    y = "Reaction Time (ms)",
     color = "Task"
   )
 
