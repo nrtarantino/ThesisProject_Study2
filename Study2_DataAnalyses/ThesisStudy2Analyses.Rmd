@@ -1,0 +1,293 @@
+---
+title: "Study2Analyses"
+author: "Nick Tarantino"
+date: "`r Sys.Date()`"
+output: word_document
+---
+
+  Loading the file and coding the data. We also set up the choose_big variable which tells us (invariant to response assignment) whether the participants chose increasing (or big for number) or decreasing (or small for number) where 1 = increasing and 0 = decreasing.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+library(lme4)
+library(lmerTest)
+library(emmeans)
+
+df <- read.csv(
+  file.path(
+    path.expand("~"),
+    "Desktop",
+    "ThesisProject_Study2",
+    "DataExp1c",
+    "study2c_combined.csv"
+  )
+)
+
+#Filter participants without normal or corrected to normal vision
+abnormal_vision_ids <- c(96457)
+df <- df %>%
+  filter(!sonaId %in% abnormal_vision_ids)
+
+df <- df %>%
+  mutate(
+    slope = as.numeric(slope),
+    n = as.numeric(n),
+    accuracy = case_when(
+      accuracy == TRUE ~ 1L,
+      accuracy == FALSE ~ 0L,
+      TRUE ~ NA_integer_
+    ),
+    choose_big = case_when(
+      responseCode == 1 & responseKey == "P" ~ 0,
+      responseCode == 1 & responseKey == "Q" ~ 1,
+      responseCode == 2 & responseKey == "Q" ~ 0, 
+      responseCode == 2 & responseKey == "P" ~ 1,
+      TRUE ~ NA_real_
+    )
+  )
+```
+
+  Participants will be cut if they are below chance accuracy on non-training trails (i.e., accuracy < 0.537). Here is the code to cut them for the trend and number block.
+
+```{r}
+good_trend_ids <- df %>%
+  filter(blockName == "Trend", trialType != "training", !is.na(accuracy)) %>%
+  group_by(sonaId) %>%
+  summarise(n_correct = sum(accuracy), .groups = "drop") %>%
+  filter(n_correct >= 276) %>%
+  pull(sonaId)
+
+good_number_ids <- df %>%
+  filter(blockName == "Number", trialType != "training", !is.na(accuracy)) %>%
+  group_by(sonaId) %>%
+  summarise(n_correct = sum(accuracy), .groups = "drop") %>%
+  filter(n_correct >= 276) %>%
+  pull(sonaId)
+
+```
+
+  Now we will make the data sets for the trend and number blocks seperatley. We will create categorical and continous factors for slope and n for both kinds of tests, centering the continous ones. We will also filter out very quick and very slow reactionTime trials. 
+
+```{r}
+
+df_clean <- df %>%
+  filter(
+    trialType != "training",
+    reactionTime > 250,
+    reactionTime < 3000,
+    !is.na(accuracy)
+  ) %>%
+  mutate(
+    n_c = n - mean(n, na.rm = TRUE),
+    slope_c = slope - mean(slope, na.rm = TRUE),
+    slope_sign = factor(if_else(slope > 0, "Positive", "Negative")),
+    n_size = factor(if_else(n > 15, "Big", "Small")),
+    log_rt = log(reactionTime)
+  )
+
+df_trend_acc <- df_clean %>%
+  filter(blockName == "Trend", sonaId %in% good_trend_ids)
+
+df_trend_rt <- df_trend_acc %>%
+  filter(accuracy == 1)
+
+df_number_acc <- df_clean %>%
+  filter(blockName == "Number", sonaId %in% good_number_ids)
+
+df_number_rt <- df_number_acc %>%
+  filter(accuracy == 1)
+
+```
+
+  Now we will create the accuracy and reactionTime model for the trend block to answer the first question:
+  
+  1. Are judgements of the trend of an array influenced by the number of points of the array differently for increasing and decreasing trends, such that more points are more helpful only for increasing trends (and possibly harmful or have no effect for decreasing trends)?
+  
+In the model we look for an interaction between n and the sign of the slope and we will run the model at both slop_signs to see the simple effect of n at each.
+
+```{r}
+m_rt_trend_sign <- lmer(
+  log_rt ~ n_c * slope_sign + (1 + slope_sign | sonaId),
+  data = df_trend_rt
+)
+
+summary(m_rt_trend_sign)
+
+emm_trends <- emtrends(
+  m_rt_trend_sign,
+  ~ slope_sign,
+  var = "n_c"
+)
+
+summary(emm_trends, infer = TRUE)
+
+contrast(
+  emm_trends,
+  method = "pairwise"
+) %>%
+  summary(infer = TRUE)
+
+```
+  For increasing slopes we see a big effect of n indicating that the greater the number of points the lower the reaction time. For decreasing slopes we see no effect of n. The interaction effect tells us that these two effects are significantly different. That is, as predicted, more n reduces reaction time to a greater extent for increasing slopes than for decreasing slopes.
+
+Now we do the same for accuracy:
+  
+```{r}
+m_acc_trend_sign <- glmer(
+  accuracy ~ n_c * slope_sign + (1 + slope_sign | sonaId),
+  data = df_trend_acc,
+  family = binomial
+)
+
+summary(m_acc_trend_sign)
+
+emm_trends_acc <- emtrends(
+  m_acc_trend_sign,
+  ~ slope_sign,
+  var = "n_c"
+)
+
+summary(emm_trends_acc, infer = TRUE)
+
+contrast(
+  emm_trends_acc,
+  method = "pairwise"
+) %>%
+  summary(infer = TRUE)
+
+```
+  
+  Again for increasing slopes we see a big effect of n on accuracy indicating that the greater the number of points the higher the accuracy. For decreasing slopes we see no effect of n. The interaction effect tells us that these two effects are significantly different. That is, as predicted, more n increases accuracy more for increasing slopes than for decreasing slopes.
+  
+  Now we will conduct a test to adjudicate between two possible explanations of this effect: participants either 1) have a a bias in which the numerosity of an array influences their decision about its trend because large arrays are associated with increasing trends and small with decreasing or 2) rely on a prior for decreasing slopes when there is a dearth of evidence (such as when there is less points. 
+
+  The second account would predict that the porportion of decreasing choices reduces as the steepness of the slope and the number of points increases, because both would provide more evidence so you would expect less reliance on such a prior when there is more useful evidence for the correct decision. 
+  
+  We will therefore use a model to predict the porportion of choices for increasing as a function of n and the absolute value of the slope:
+
+```{r}
+
+df_trend_acc <- df_trend_acc %>%
+  mutate(
+    abs_slope = abs(slope),
+    abs_slope_c = abs_slope - mean(abs_slope)
+  )
+
+m_choice <- glmer(
+  choose_big ~ abs_slope_c * n_c + (1 + abs_slope_c * n_c || sonaId),
+  data = df_trend_acc,
+  family = binomial,
+ control = glmerControl( optimizer = "bobyqa",optCtrl = list(maxfun = 1e5)
+  )
+)
+
+summary(m_choice)
+```
+  From this model we see no effect of n or of the absolute value of slope on the porportion of "increasing" choices. Thus, more evidence in the form of more points or of steeper slopes leads participants to choose decreasing slopes less often (given its a 2AFC task more increasing choices requries less decreasing choices). Accordingly, an explanation requiring a prior for decrasing slopes is incompatible with the data. 
+  
+  The interaction effect is worth following up to interpret so we will look at the effect of n at +- 1 SD of |slopes|. 
+  
+```{r}
+sd_slope <- sd(df_trend_acc$abs_slope_c, na.rm = TRUE)
+
+m_choice_slope <- glmer(
+  choose_big ~ n_c * abs_slope_c + (1 + abs_slope_c * n_c || sonaId),
+  data = df_trend_acc,
+  family = binomial,
+  control = glmerControl(
+    optimizer = "bobyqa",
+    optCtrl = list(maxfun = 1e5)
+  )
+)
+
+summary(m_choice_slope)
+
+emm_choice_slope <- emtrends(
+  m_choice_slope,
+  ~ abs_slope_c,
+  var = "n_c",
+  at = list(
+    abs_slope_c = c(-sd_slope, sd_slope)
+  )
+)
+
+summary(emm_choice_slope, infer = TRUE)
+
+contrast(
+  emm_choice_slope,
+  method = "pairwise"
+) %>%
+  summary(infer = TRUE)
+
+```
+  
+  We see that at low slope steepness there is no effect of the number of points on the porportion of choices of "increasing" and at high slope steepness there is a positive effect. In other words, only at steep slopes do more points lead to more choices "increasing" and by virture of the fact that it is a 2AFC task, less points leads to more choices "decreasing". That is, when the magnitude of the slope is larger number interfers with judgements of trend more in opposite directions for increasing and decreasing trends, as predicted by the trend-number association account and in conflict with the "decreasing trend prior" account. 
+
+  Now we will create the accuracy and reactionTime models for the number block to answer the second question:
+
+2. Does the trend of a dot array influence judgments of its numerosity and does that influence depend on whether the array is numerous or not. Specifically, are large arrays with increasing trends and small arrays with decreasing trends judged faster and more accuratley than vice versa.
+  
+```{r}
+m_rt_number_sign <- lmer(
+  log_rt ~ n_size * slope_c + (1 + n_size | sonaId),
+  data = df_number_rt,
+  control = lmerControl(
+    optimizer = "bobyqa",
+    optCtrl = list(maxfun = 1e5)
+  )
+)
+
+summary(m_rt_number_sign)
+
+emm_trends_number_rt <- emtrends(
+  m_rt_number_sign,
+  ~ n_size,
+  var = "slope_c"
+)
+
+summary(emm_trends_number_rt, infer = TRUE)
+
+contrast(
+  emm_trends_number_rt,
+  method = "pairwise"
+) %>%
+  summary(infer = TRUE)
+
+```
+  As predicted, there is no effect of the slope for numerous arrays nor for not numerous arrays. Moreover, there is no interaction effect indicating that trend does not influence judgements of number differently depending on numerosity.
+  
+Now for accuracy:
+
+```{r}
+m_acc_number_sign <- glmer(
+  accuracy ~ n_size * slope_c + (1 + n_size | sonaId),
+  data = df_number_acc,
+  family = binomial,
+  control = glmerControl(
+    optimizer = "bobyqa",
+    optCtrl = list(maxfun = 1e5)
+  )
+)
+
+summary(m_acc_number_sign)
+
+emm_trends_number_acc <- emtrends(
+  m_acc_number_sign,
+  ~ n_size,
+  var = "slope_c"
+)
+
+summary(emm_trends_number_acc, infer = TRUE)
+
+contrast(
+  emm_trends_number_acc,
+  method = "pairwise"
+) %>%
+  summary(infer = TRUE)
+```
+
+  Again, we so no influence of slope for numerous or not numerous arrays on accuracy nor do we see an interaction. 
+  
+
